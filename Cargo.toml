@@ -1,0 +1,9 @@
+[workspace]
+resolver = "2"
+members = [
+    "olpc-cjson",
+    "tough",
+    "tough-ssm",
+    "tough-kms",
+    "tuftool",
+]
