@@ -2,7 +2,6 @@
 members = [
     "stuf-core",
     "stuf-env",
-    "stuf-primitives",
     "stuf-protocols",
     "stuf-examples",
 ]

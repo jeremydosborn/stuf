@@ -1,18 +1,17 @@
 # stuf
 
-A protocol-agnostic supply chain security framework for Rust, designed to run anywhere from cloud infrastructure to embedded.
+A protocol-agnostic supply chain security framework for Rust, designed to run anywhere.
 
 ## What stuf does
 
-stuf provides a single, minimal trust kernel that every protocol builds on. The same trust model that secures a cloud software repository can secure a firmware update on an embedded device.
+stuf provides a single, minimal trust kernel that every protocol builds on.
 
 ## Architecture
 
 ```
 stuf-core        # no_std trust kernel — runs anywhere
-stuf-env         # platform bindings — Tock, std, bare metal
-stuf-primitives  # shared building blocks
-stuf-protocols   # TUF, Uptane, in-toto, sigstore, SBOM
+stuf-env         # platform bindings — FreeRTOS, std, bare metal, etc.
+stuf-protocols   # TUF, Uptane, in-toto, sigstore
 stuf-examples    # embedded and cloud demos
 old/             # reference fork of Amazon's tough (frozen)
 ```
