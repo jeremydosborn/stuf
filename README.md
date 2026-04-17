@@ -10,7 +10,7 @@ stuf provides a single, minimal trust kernel that every protocol builds on.
 
 ```
 stuf-core        # no_std trust kernel — runs anywhere
-stuf-env         # platform bindings — FreeRTOS, std, bare metal, etc.
+stuf-env         # platform bindings — FreeRTOS, std, bare metal
 stuf-protocols   # TUF, Uptane, in-toto, sigstore
 stuf-examples    # embedded and cloud demos
 old/             # reference fork of Amazon's tough (frozen)
