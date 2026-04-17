@@ -1,9 +1,10 @@
 [workspace]
-resolver = "2"
 members = [
-    "olpc-cjson",
-    "tough",
-    "tough-ssm",
-    "tough-kms",
-    "tuftool",
+    "stuf-core",
+    "stuf-env",
+    "stuf-primitives",
+    "stuf-protocols",
+    "stuf-examples",
 ]
+
+resolver = "2"

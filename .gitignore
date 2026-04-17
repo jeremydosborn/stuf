@@ -2,3 +2,4 @@
 **/*.rs.bk
 /.cargo
 .DS_Store
+old/target/
