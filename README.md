@@ -9,10 +9,10 @@ stuf provides a single, minimal trust kernel that every protocol builds on.
 ## Architecture
 
 ```
-stuf-core        # no_std trust kernel — runs anywhere
-stuf-env         # crypto, storage, transport, os
+stuf-core        # no_std trust kernel — Unverified<T> → Verified<T>, zero dependencies
+stuf-env         # feature-flagged impls — crypto, transport, storage, clock, encoding
 stuf-protocols   # TUF, Uptane, in-toto, sigstore, notation
-stuf-examples    # embedded and cloud demos
+stuf-examples    # embedded, RTOS, and cloud demos
 old/             # reference fork of AWS tough (frozen)
 ```
 
