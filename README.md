@@ -27,6 +27,14 @@ old/             # reference fork of AWS tough (frozen)
 
 Early stage. Core trust kernel complete. Protocol implementations in progress.
 
+## Roadmap
+- TUF client — in progress
+- TUF publisher — planned
+- Uptane — planned
+- in-toto — planned
+- sigstore — planned
+- notation — planned
+
 ## License
 
 Apache 2.0 / MIT
