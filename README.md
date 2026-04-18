@@ -1,10 +1,11 @@
 # stuf
-
 A protocol-agnostic supply chain security framework for Rust, designed to run anywhere.
 
 ## What stuf does
-
 stuf provides a single, minimal trust kernel that every protocol builds on.
+Declare your target environment and get a correct, minimal binary — from 
+bare metal microcontrollers to cloud services. The compiler assembles 
+exactly what you need. Nothing else is included.
 
 ## Architecture
 
