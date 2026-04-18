@@ -11,7 +11,7 @@ exactly what you need. Nothing else is included.
 
 ```
 stuf-core        # no_std trust kernel — Unverified<T> → Verified<T>, zero dependencies
-stuf-env         # feature-flagged impls — crypto, transport, storage, clock, encoding
+stuf-env         # crypto, transport, storage, clock, encoding, etc.
 stuf-protocols   # TUF, Uptane, in-toto, sigstore, notation
 stuf-examples    # embedded, RTOS, and cloud demos
 old/             # reference fork of AWS tough (frozen)
