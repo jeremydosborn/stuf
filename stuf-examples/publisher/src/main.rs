@@ -7,8 +7,8 @@
 
 use ed25519_dalek::{Signer, SigningKey};
 use rand::rngs::OsRng;
-use sha2::{Digest, Sha256};
 use serde::{Deserialize, Serialize};
+use sha2::{Digest, Sha256};
 use std::collections::HashMap;
 
 // ── TUF metadata types (minimal, for signing) ─────────────────────────────
@@ -123,14 +123,20 @@ impl KeyPair {
         let mut hasher = Sha256::new();
         hasher.update(&public_bytes);
         let key_id = hex::encode(hasher.finalize());
-        Self { signing_key, key_id, public_hex }
+        Self {
+            signing_key,
+            key_id,
+            public_hex,
+        }
     }
 
     fn to_tuf_key(&self) -> Key {
         Key {
             keytype: "ed25519".to_string(),
             scheme: "ed25519".to_string(),
-            keyval: KeyVal { public: self.public_hex.clone() },
+            keyval: KeyVal {
+                public: self.public_hex.clone(),
+            },
         }
     }
 
@@ -140,8 +146,10 @@ impl KeyPair {
     }
 }
 
-fn sign_metadata<T: Serialize + serde::de::DeserializeOwned>(payload: &T, keypair: &KeyPair) -> Signed<T>
-{
+fn sign_metadata<T: Serialize + serde::de::DeserializeOwned>(
+    payload: &T,
+    keypair: &KeyPair,
+) -> Signed<T> {
     // Serialize the signed portion to canonical JSON
     let canonical = serde_json::to_vec(payload).expect("serialize");
     let sig_hex = keypair.sign(&canonical);
@@ -228,22 +236,34 @@ fn build_repo() -> Repo {
 
     // Build roles map for root
     let mut roles = HashMap::new();
-    roles.insert("root".to_string(), RoleKeys {
-        keyids: vec![root_key.key_id.clone()],
-        threshold: 1,
-    });
-    roles.insert("targets".to_string(), RoleKeys {
-        keyids: vec![targets_key.key_id.clone()],
-        threshold: 1,
-    });
-    roles.insert("snapshot".to_string(), RoleKeys {
-        keyids: vec![snapshot_key.key_id.clone()],
-        threshold: 1,
-    });
-    roles.insert("timestamp".to_string(), RoleKeys {
-        keyids: vec![timestamp_key.key_id.clone()],
-        threshold: 1,
-    });
+    roles.insert(
+        "root".to_string(),
+        RoleKeys {
+            keyids: vec![root_key.key_id.clone()],
+            threshold: 1,
+        },
+    );
+    roles.insert(
+        "targets".to_string(),
+        RoleKeys {
+            keyids: vec![targets_key.key_id.clone()],
+            threshold: 1,
+        },
+    );
+    roles.insert(
+        "snapshot".to_string(),
+        RoleKeys {
+            keyids: vec![snapshot_key.key_id.clone()],
+            threshold: 1,
+        },
+    );
+    roles.insert(
+        "timestamp".to_string(),
+        RoleKeys {
+            keyids: vec![timestamp_key.key_id.clone()],
+            threshold: 1,
+        },
+    );
 
     // Root
     print!("signing root.json...      ");
@@ -263,10 +283,15 @@ fn build_repo() -> Repo {
     // Targets
     print!("signing targets.json...   ");
     let mut targets = HashMap::new();
-    targets.insert(firmware_name.to_string(), Target {
-        length: firmware.len() as u64,
-        hashes: Hashes { sha256: firmware_hash },
-    });
+    targets.insert(
+        firmware_name.to_string(),
+        Target {
+            length: firmware.len() as u64,
+            hashes: Hashes {
+                sha256: firmware_hash,
+            },
+        },
+    );
     let targets_signed_payload = TargetsSigned {
         role_type: "targets".to_string(),
         spec_version: "1.0.0".to_string(),
@@ -336,10 +361,10 @@ fn save_repo(repo: &Repo) {
     let repo_dir = Path::new("stuf-examples/publisher-repo");
     fs::create_dir_all(repo_dir).expect("create publisher-repo");
 
-    fs::write(repo_dir.join("root.json"),      &repo.root_json).expect("write root.json");
+    fs::write(repo_dir.join("root.json"), &repo.root_json).expect("write root.json");
     fs::write(repo_dir.join("timestamp.json"), &repo.timestamp_json).expect("write timestamp.json");
-    fs::write(repo_dir.join("snapshot.json"),  &repo.snapshot_json).expect("write snapshot.json");
-    fs::write(repo_dir.join("targets.json"),   &repo.targets_json).expect("write targets.json");
+    fs::write(repo_dir.join("snapshot.json"), &repo.snapshot_json).expect("write snapshot.json");
+    fs::write(repo_dir.join("targets.json"), &repo.targets_json).expect("write targets.json");
     fs::write(repo_dir.join("toaster-firmware-1.1.0.bin"), &repo.firmware).expect("write firmware");
 
     // Also save root.json to toaster factory/ for manufacture burn

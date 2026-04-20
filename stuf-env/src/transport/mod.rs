@@ -9,7 +9,9 @@ pub struct MockTransport {
 
 impl MockTransport {
     pub fn new() -> Self {
-        Self { files: HashMap::new() }
+        Self {
+            files: HashMap::new(),
+        }
     }
 
     pub fn add(mut self, name: &str, content: Vec<u8>) -> Self {
@@ -19,7 +21,9 @@ impl MockTransport {
 }
 
 impl Default for MockTransport {
-    fn default() -> Self { Self::new() }
+    fn default() -> Self {
+        Self::new()
+    }
 }
 
 #[derive(Debug)]

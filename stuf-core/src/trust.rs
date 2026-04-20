@@ -1,5 +1,5 @@
-use crate::error::StufError;
 use crate::artifact::Bundle;
+use crate::error::StufError;
 
 pub struct Verified<T> {
     payload: T,

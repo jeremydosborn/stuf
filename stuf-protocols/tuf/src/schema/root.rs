@@ -1,13 +1,13 @@
 //! TUF root metadata — the trust anchor for a TUF repository.
 
 #[cfg(feature = "alloc")]
-use alloc::{string::String, collections::BTreeMap};
+use alloc::{collections::BTreeMap, string::String};
 
-use serde::{Deserialize, Serialize};
 use crate::schema::{
     keys::{KeyId, PublicKey},
     role::{Role, RoleKeys, RoleType},
 };
+use serde::{Deserialize, Serialize};
 
 /// Root metadata — lists which keys are authorized for each role
 /// and the threshold of signatures required.

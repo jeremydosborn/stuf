@@ -8,20 +8,11 @@ use crate::schema::targets::Hashes;
 
 /// Signature verification — implemented by stuf-env crypto modules.
 pub trait Verifier {
-    fn verify(
-        &self,
-        key: &PublicKey,
-        message: &[u8],
-        signature: &[u8],
-    ) -> Result<(), VerifyError>;
+    fn verify(&self, key: &PublicKey, message: &[u8], signature: &[u8]) -> Result<(), VerifyError>;
 
     /// Verify target bytes against expected hashes.
     /// stuf-env owns the actual hash computation.
-    fn verify_hash(
-        &self,
-        bytes: &[u8],
-        hashes: &Hashes,
-    ) -> Result<(), VerifyError>;
+    fn verify_hash(&self, bytes: &[u8], hashes: &Hashes) -> Result<(), VerifyError>;
 }
 
 /// Signing — used by the publisher side (build/).
@@ -49,4 +40,3 @@ impl core::fmt::Display for SignError {
         write!(f, "signing failed")
     }
 }
-

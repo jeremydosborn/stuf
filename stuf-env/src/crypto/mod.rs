@@ -6,8 +6,11 @@
 use ed25519_dalek::{Signature, VerifyingKey};
 use sha2::{Digest, Sha256};
 use stuf_tuf::{
-    schema::{keys::{KeyType, PublicKey}, targets::Hashes},
-    sign::traits::{VerifyError, Verifier},
+    schema::{
+        keys::{KeyType, PublicKey},
+        targets::Hashes,
+    },
+    sign::traits::{Verifier, VerifyError},
 };
 
 /// Ed25519 verifier using ed25519-dalek.
@@ -15,12 +18,7 @@ use stuf_tuf::{
 pub struct Ed25519Verifier;
 
 impl Verifier for Ed25519Verifier {
-    fn verify(
-        &self,
-        key: &PublicKey,
-        message: &[u8],
-        signature: &[u8],
-    ) -> Result<(), VerifyError> {
+    fn verify(&self, key: &PublicKey, message: &[u8], signature: &[u8]) -> Result<(), VerifyError> {
         if key.keytype != KeyType::Ed25519 {
             return Err(VerifyError);
         }
@@ -36,11 +34,7 @@ impl Verifier for Ed25519Verifier {
         verifying_key.verify(message, &sig).map_err(|_| VerifyError)
     }
 
-    fn verify_hash(
-        &self,
-        bytes: &[u8],
-        hashes: &Hashes,
-    ) -> Result<(), VerifyError> {
+    fn verify_hash(&self, bytes: &[u8], hashes: &Hashes) -> Result<(), VerifyError> {
         if let Some(expected_hex) = &hashes.sha256 {
             let mut hasher = Sha256::new();
             hasher.update(bytes);

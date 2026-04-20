@@ -25,14 +25,14 @@ static ROOT_BYTES: &[u8] = include_bytes!("../factory/root.json");
 
 // ── Version constants ─────────────────────────────────────────────────────────
 const CURRENT_VERSION: &str = "1.0.0";
-const NEW_VERSION:      &str = "1.1.0";
-const TARGET_FIRMWARE:  &str = "toaster-firmware-1.1.0.bin";
+const NEW_VERSION: &str = "1.1.0";
+const TARGET_FIRMWARE: &str = "toaster-firmware-1.1.0.bin";
 
 // ── Buffer sizes ──────────────────────────────────────────────────────────────
 // Fixed at compile time — no heap, no surprises
-const META_BUF:     usize = 4096;  // max metadata file size (JSON)
-const FIRMWARE_BUF: usize = 2048;  // max firmware size (demo)
-const PATH_BUF:     usize = 64;    // max file path length
+const META_BUF: usize = 4096; // max metadata file size (JSON)
+const FIRMWARE_BUF: usize = 2048; // max firmware size (demo)
+const PATH_BUF: usize = 64; // max file path length
 
 // ── Semihosting syscalls ──────────────────────────────────────────────────────
 // Raw ARM semihosting: SYS_OPEN / SYS_FLEN / SYS_READ / SYS_CLOSE
@@ -45,12 +45,20 @@ mod semi {
         // mode 0 = "rb" (read binary)
         let args = [path.as_ptr() as usize, 0usize, path.len() - 1]; // len excludes null
         let fd = unsafe { cortex_m_semihosting::syscall(nr::OPEN, &args) };
-        if fd == usize::MAX { None } else { Some(fd) }
+        if fd == usize::MAX {
+            None
+        } else {
+            Some(fd)
+        }
     }
 
     pub fn flen(fd: usize) -> Option<usize> {
         let len = unsafe { cortex_m_semihosting::syscall(nr::FLEN, &fd) };
-        if len == usize::MAX { None } else { Some(len) }
+        if len == usize::MAX {
+            None
+        } else {
+            Some(len)
+        }
     }
 
     pub fn read(fd: usize, buf: &mut [u8]) -> bool {
@@ -104,7 +112,11 @@ impl SemihostingTransport {
         let ok = semi::read(fd, &mut buf[..len]);
         semi::close(fd);
 
-        if ok { Some(&buf[..len]) } else { None }
+        if ok {
+            Some(&buf[..len])
+        } else {
+            None
+        }
     }
 }
 
@@ -120,7 +132,7 @@ fn sha256(data: &[u8]) -> [u8; 32] {
 fn hex_encode(bytes: &[u8; 32], out: &mut [u8; 64]) {
     const HEX: &[u8] = b"0123456789abcdef";
     for (i, &b) in bytes.iter().enumerate() {
-        out[i * 2]     = HEX[(b >> 4) as usize];
+        out[i * 2] = HEX[(b >> 4) as usize];
         out[i * 2 + 1] = HEX[(b & 0xf) as usize];
     }
 }
@@ -128,10 +140,14 @@ fn hex_encode(bytes: &[u8; 32], out: &mut [u8; 64]) {
 // ── Flash write simulation ────────────────────────────────────────────────────
 
 fn flash_write(firmware: &[u8]) {
-    let checksum = firmware.iter()
+    let checksum = firmware
+        .iter()
         .fold(0u32, |acc, &b| acc.wrapping_add(b as u32));
-    hprintln!("  writing {} bytes to flash (checksum: 0x{:08x})",
-        firmware.len(), checksum);
+    hprintln!(
+        "  writing {} bytes to flash (checksum: 0x{:08x})",
+        firmware.len(),
+        checksum
+    );
 }
 
 // ── Attack simulations ────────────────────────────────────────────────────────
@@ -179,44 +195,60 @@ fn main() -> ! {
     hprintln!("━━━ UPDATE SEQUENCE ━━━━━━━━━━━━━━━━━━━━━━━━━━━");
 
     // Stack buffers — caller owned, no heap
-    let mut ts_buf       = [0u8; META_BUF];
-    let mut snap_buf     = [0u8; META_BUF];
-    let mut targets_buf  = [0u8; META_BUF];
+    let mut ts_buf = [0u8; META_BUF];
+    let mut snap_buf = [0u8; META_BUF];
+    let mut targets_buf = [0u8; META_BUF];
     let mut firmware_buf = [0u8; FIRMWARE_BUF];
 
     // 1. Fetch timestamp
     hprintln!("[1/5] fetching timestamp...");
-    let ts = transport.fetch("timestamp.json", &mut ts_buf).unwrap_or_else(|| {
-        hprintln!("      FAILED"); loop {}
-    });
+    let ts = transport
+        .fetch("timestamp.json", &mut ts_buf)
+        .unwrap_or_else(|| {
+            hprintln!("      FAILED");
+            loop {}
+        });
     hprintln!("      ok ({} bytes)", ts.len());
 
     // 2. Fetch snapshot
     hprintln!("[2/5] fetching snapshot...");
-    let snap = transport.fetch("snapshot.json", &mut snap_buf).unwrap_or_else(|| {
-        hprintln!("      FAILED"); loop {}
-    });
+    let snap = transport
+        .fetch("snapshot.json", &mut snap_buf)
+        .unwrap_or_else(|| {
+            hprintln!("      FAILED");
+            loop {}
+        });
     hprintln!("      ok ({} bytes)", snap.len());
 
     // 3. Fetch targets
     hprintln!("[3/5] fetching targets...");
-    let targets = transport.fetch("targets.json", &mut targets_buf).unwrap_or_else(|| {
-        hprintln!("      FAILED"); loop {}
-    });
+    let targets = transport
+        .fetch("targets.json", &mut targets_buf)
+        .unwrap_or_else(|| {
+            hprintln!("      FAILED");
+            loop {}
+        });
     hprintln!("      ok ({} bytes)", targets.len());
 
     // 4. Verify against root
     hprintln!("[4/5] verifying against root...");
     if ROOT_BYTES.is_empty() || ts.is_empty() || snap.is_empty() || targets.is_empty() {
-        hprintln!("      FAILED — empty metadata"); loop {}
+        hprintln!("      FAILED — empty metadata");
+        loop {}
     }
-    hprintln!("      ok (root: {} bytes, manufacture burn)", ROOT_BYTES.len());
+    hprintln!(
+        "      ok (root: {} bytes, manufacture burn)",
+        ROOT_BYTES.len()
+    );
 
     // 5. Fetch and verify firmware
     hprintln!("[5/5] fetching firmware v{}...", NEW_VERSION);
-    let firmware = transport.fetch(TARGET_FIRMWARE, &mut firmware_buf).unwrap_or_else(|| {
-        hprintln!("      FAILED"); loop {}
-    });
+    let firmware = transport
+        .fetch(TARGET_FIRMWARE, &mut firmware_buf)
+        .unwrap_or_else(|| {
+            hprintln!("      FAILED");
+            loop {}
+        });
     let hash_bytes = sha256(firmware);
     let mut hash_hex = [0u8; 64];
     hex_encode(&hash_bytes, &mut hash_hex);

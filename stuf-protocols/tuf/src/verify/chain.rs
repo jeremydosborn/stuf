@@ -125,19 +125,27 @@ where
         )?;
 
         let verified = unverified.into_verified();
-        Ok(Self { root: verified, verifier, transport, clock, encoding })
+        Ok(Self {
+            root: verified,
+            verifier,
+            transport,
+            clock,
+            encoding,
+        })
     }
 
     /// Step 1 — fetch and verify timestamp.json
     pub fn verify_timestamp(self) -> Result<TimestampVerified<V, T, C, E>> {
-        let bytes = self.transport
+        let bytes = self
+            .transport
             .fetch("timestamp.json")
             .map_err(|_| Error::Transport)?;
 
         let signed: Signed<Timestamp> = self.encoding.decode(bytes.as_ref())?;
         let unverified = Unverified::from_signed(signed);
 
-        let role_keys = self.root
+        let role_keys = self
+            .root
             .get()
             .role_keys(&RoleType::Timestamp)
             .ok_or(Error::NoKeysForRole)?;
@@ -174,19 +182,22 @@ where
 {
     /// Step 2 — fetch and verify snapshot.json
     pub fn verify_snapshot(self) -> Result<SnapshotVerified<V, T, C, E>> {
-        let snap_meta = self.timestamp
+        let snap_meta = self
+            .timestamp
             .get()
             .snapshot_meta()
             .ok_or(Error::SnapshotMismatch)?;
 
-        let bytes = self.transport
+        let bytes = self
+            .transport
             .fetch("snapshot.json")
             .map_err(|_| Error::Transport)?;
 
         let signed: Signed<Snapshot> = self.encoding.decode(bytes.as_ref())?;
         let unverified = Unverified::from_signed(signed);
 
-        let role_keys = self.root
+        let role_keys = self
+            .root
             .get()
             .role_keys(&RoleType::Snapshot)
             .ok_or(Error::NoKeysForRole)?;
@@ -232,19 +243,22 @@ where
 {
     /// Step 3 — fetch and verify targets.json
     pub fn verify_targets(self) -> Result<TargetsVerified<V, T, C, E>> {
-        let snap_meta = self.snapshot
+        let snap_meta = self
+            .snapshot
             .get()
             .meta_for("targets.json")
             .ok_or(Error::SnapshotMismatch)?;
 
-        let bytes = self.transport
+        let bytes = self
+            .transport
             .fetch("targets.json")
             .map_err(|_| Error::Transport)?;
 
         let signed: Signed<Targets> = self.encoding.decode(bytes.as_ref())?;
         let unverified = Unverified::from_signed(signed);
 
-        let role_keys = self.root
+        let role_keys = self
+            .root
             .get()
             .role_keys(&RoleType::Targets)
             .ok_or(Error::NoKeysForRole)?;
@@ -291,14 +305,13 @@ where
 {
     /// Step 4 — fetch firmware and verify against targets metadata
     pub fn verify_target(&self, name: &str) -> Result<Verified<Target>> {
-        let target_meta = self.targets
+        let target_meta = self
+            .targets
             .get()
             .get_target(name)
             .ok_or(Error::TargetNotFound)?;
 
-        let bytes = self.transport
-            .fetch(name)
-            .map_err(|_| Error::Transport)?;
+        let bytes = self.transport.fetch(name).map_err(|_| Error::Transport)?;
 
         let bytes = bytes.as_ref();
 
@@ -326,5 +339,3 @@ where
         &self.root
     }
 }
-
-

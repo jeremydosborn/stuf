@@ -1,10 +1,10 @@
 //! TUF snapshot metadata — records current version of every targets file.
 
 #[cfg(feature = "alloc")]
-use alloc::{string::String, collections::BTreeMap};
+use alloc::{collections::BTreeMap, string::String};
 
-use serde::{Deserialize, Serialize};
 use crate::schema::role::{Role, RoleType};
+use serde::{Deserialize, Serialize};
 
 /// Expected version and optional hash of a metadata file
 /// as recorded in snapshot.json.

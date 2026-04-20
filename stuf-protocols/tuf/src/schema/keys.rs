@@ -7,8 +7,8 @@
 #[cfg(feature = "alloc")]
 use alloc::string::String;
 
-use serde::{Deserialize, Serialize};
 use core::fmt;
+use serde::{Deserialize, Serialize};
 
 /// A key identifier — SHA-256 digest of the canonical key encoding.
 #[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord, Hash, Serialize, Deserialize)]

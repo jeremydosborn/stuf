@@ -3,9 +3,9 @@
 #[cfg(feature = "alloc")]
 use alloc::vec::Vec;
 
-use serde::{Deserialize, Serialize};
-use core::fmt;
 use crate::schema::keys::KeyId;
+use core::fmt;
+use serde::{Deserialize, Serialize};
 
 /// The four top-level TUF roles.
 #[derive(Debug, Clone, PartialEq, Eq, Hash, Serialize, Deserialize)]
@@ -48,7 +48,9 @@ impl RoleKeys {
 
 /// Common behavior across all role metadata types.
 pub trait Role {
-    fn role_type() -> RoleType where Self: Sized;
+    fn role_type() -> RoleType
+    where
+        Self: Sized;
     fn version(&self) -> u32;
     /// Expiry as unix timestamp (seconds since epoch).
     /// No chrono dependency — the Clock trait in stuf-env

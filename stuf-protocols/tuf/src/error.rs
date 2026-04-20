@@ -41,12 +41,18 @@ impl fmt::Display for Error {
             Error::NoValidSignatures => write!(f, "no valid signatures found"),
             Error::Expired => write!(f, "metadata has expired"),
             Error::VersionRollback { trusted, received } => {
-                write!(f, "rollback detected: trusted {trusted}, received {received}")
+                write!(
+                    f,
+                    "rollback detected: trusted {trusted}, received {received}"
+                )
             }
             Error::SnapshotMismatch => write!(f, "snapshot metadata mismatch"),
             Error::TargetHashMismatch => write!(f, "target hash mismatch"),
             Error::TargetLengthMismatch { expected, actual } => {
-                write!(f, "target length mismatch: expected {expected}, got {actual}")
+                write!(
+                    f,
+                    "target length mismatch: expected {expected}, got {actual}"
+                )
             }
             Error::TargetNotFound => write!(f, "target not found"),
             Error::NoKeysForRole => write!(f, "no keys for role"),

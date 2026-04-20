@@ -1,10 +1,10 @@
 mod common;
 
 use common::*;
+use stuf_env::crypto::Ed25519Verifier;
 use stuf_tuf::error::Error;
 use stuf_tuf::verify::chain::TrustAnchor;
 use stuf_tuf::verify::state::FixedClock;
-use stuf_env::crypto::Ed25519Verifier;
 
 fn build_transport(
     root_key: &TestKey,
@@ -17,7 +17,14 @@ fn build_transport(
     ts_snap_version: u32,
     snap_targets_version: u32,
 ) -> (Vec<u8>, MockTransport) {
-    let root = make_root(root_key, targets_key, snapshot_key, timestamp_key, FAR_FUTURE, 1);
+    let root = make_root(
+        root_key,
+        targets_key,
+        snapshot_key,
+        timestamp_key,
+        FAR_FUTURE,
+        1,
+    );
     let root_bytes = sign_root(&root, root_key);
     let ts = make_timestamp(ts_snap_version, FAR_FUTURE, ts_version);
     let snap = make_snapshot(snap_targets_version, FAR_FUTURE, snap_version);
@@ -42,9 +49,22 @@ fn snapshot_rollback_rejected() {
     // Timestamp expects snapshot v5 but we receive v1
     let (root_bytes, transport) = build_transport(&rk, &tk, &sk, &tsk, 1, 1, 1, 5, 1);
 
-    let anchor = TrustAnchor::new(&root_bytes, Ed25519Verifier, transport, FixedClock(NOW), JsonEncoding).unwrap();
+    let anchor = TrustAnchor::new(
+        &root_bytes,
+        Ed25519Verifier,
+        transport,
+        FixedClock(NOW),
+        JsonEncoding,
+    )
+    .unwrap();
     let result = anchor.verify_timestamp().unwrap().verify_snapshot();
-    assert!(matches!(result, Err(Error::VersionRollback { trusted: 5, received: 1 })));
+    assert!(matches!(
+        result,
+        Err(Error::VersionRollback {
+            trusted: 5,
+            received: 1
+        })
+    ));
 }
 
 #[test]
@@ -57,9 +77,27 @@ fn targets_rollback_rejected() {
     // Snapshot expects targets v5 but we receive v1
     let (root_bytes, transport) = build_transport(&rk, &tk, &sk, &tsk, 1, 1, 1, 1, 5);
 
-    let anchor = TrustAnchor::new(&root_bytes, Ed25519Verifier, transport, FixedClock(NOW), JsonEncoding).unwrap();
-    let result = anchor.verify_timestamp().unwrap().verify_snapshot().unwrap().verify_targets();
-    assert!(matches!(result, Err(Error::VersionRollback { trusted: 5, received: 1 })));
+    let anchor = TrustAnchor::new(
+        &root_bytes,
+        Ed25519Verifier,
+        transport,
+        FixedClock(NOW),
+        JsonEncoding,
+    )
+    .unwrap();
+    let result = anchor
+        .verify_timestamp()
+        .unwrap()
+        .verify_snapshot()
+        .unwrap()
+        .verify_targets();
+    assert!(matches!(
+        result,
+        Err(Error::VersionRollback {
+            trusted: 5,
+            received: 1
+        })
+    ));
 }
 
 #[test]
@@ -71,7 +109,19 @@ fn equal_version_accepted() {
 
     let (root_bytes, transport) = build_transport(&rk, &tk, &sk, &tsk, 1, 1, 1, 1, 1);
 
-    let anchor = TrustAnchor::new(&root_bytes, Ed25519Verifier, transport, FixedClock(NOW), JsonEncoding).unwrap();
-    let result = anchor.verify_timestamp().unwrap().verify_snapshot().unwrap().verify_targets();
+    let anchor = TrustAnchor::new(
+        &root_bytes,
+        Ed25519Verifier,
+        transport,
+        FixedClock(NOW),
+        JsonEncoding,
+    )
+    .unwrap();
+    let result = anchor
+        .verify_timestamp()
+        .unwrap()
+        .verify_snapshot()
+        .unwrap()
+        .verify_targets();
     assert!(result.is_ok());
 }

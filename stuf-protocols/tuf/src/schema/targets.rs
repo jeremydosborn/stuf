@@ -1,10 +1,10 @@
 //! TUF targets metadata — lists target files and their expected properties.
 
 #[cfg(feature = "alloc")]
-use alloc::{string::String, vec::Vec, collections::BTreeMap};
+use alloc::{collections::BTreeMap, string::String, vec::Vec};
 
-use serde::{Deserialize, Serialize};
 use crate::schema::role::{Role, RoleType};
+use serde::{Deserialize, Serialize};
 
 /// Hash algorithms and digests for a target file.
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]

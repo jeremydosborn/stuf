@@ -26,4 +26,3 @@ pub trait Encoding {
     where
         T: serde::Serialize;
 }
-

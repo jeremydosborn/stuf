@@ -6,11 +6,15 @@ use stuf_tuf::verify::state::Clock;
 pub struct FixedClock(pub u64);
 
 impl FixedClock {
-    pub fn new(unix_secs: u64) -> Self { Self(unix_secs) }
+    pub fn new(unix_secs: u64) -> Self {
+        Self(unix_secs)
+    }
 }
 
 impl Clock for FixedClock {
-    fn now_secs(&self) -> u64 { self.0 }
+    fn now_secs(&self) -> u64 {
+        self.0
+    }
 }
 
 #[cfg(feature = "clock-std")]

@@ -80,4 +80,3 @@ impl Clock for FixedClock {
         self.0
     }
 }
-

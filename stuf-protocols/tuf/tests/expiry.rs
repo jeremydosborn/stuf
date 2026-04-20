@@ -11,7 +11,10 @@ fn valid_expiry_passes() {
 
 #[test]
 fn expired_metadata_rejected() {
-    assert!(matches!(check_expiry(1000, &FixedClock(2000)), Err(Error::Expired)));
+    assert!(matches!(
+        check_expiry(1000, &FixedClock(2000)),
+        Err(Error::Expired)
+    ));
 }
 
 #[test]
@@ -22,5 +25,8 @@ fn expiry_at_exact_boundary_passes() {
 
 #[test]
 fn one_second_past_expiry_rejected() {
-    assert!(matches!(check_expiry(1000, &FixedClock(1001)), Err(Error::Expired)));
+    assert!(matches!(
+        check_expiry(1000, &FixedClock(1001)),
+        Err(Error::Expired)
+    ));
 }

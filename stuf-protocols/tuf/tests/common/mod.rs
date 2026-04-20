@@ -8,6 +8,7 @@ use ed25519_dalek::{Signer, SigningKey};
 use rand::rngs::OsRng;
 use sha2::{Digest, Sha256};
 
+use stuf_tuf::error::Error;
 use stuf_tuf::schema::{
     keys::{KeyId, KeyType, KeyValue, PublicKey, SignatureScheme},
     role::RoleKeys,
@@ -17,7 +18,6 @@ use stuf_tuf::schema::{
     targets::{Hashes, Target, Targets},
     timestamp::{Timestamp, TimestampMeta},
 };
-use stuf_tuf::error::Error;
 
 // ── Real ed25519 key generation ───────────────────────────────────────────────
 
@@ -43,7 +43,11 @@ impl TestKey {
             keyval: KeyValue { public: public_hex },
         };
 
-        Self { signing_key, key_id, public_key }
+        Self {
+            signing_key,
+            key_id,
+            public_key,
+        }
     }
 
     pub fn sign(&self, payload: &[u8]) -> String {
@@ -63,7 +67,10 @@ pub fn sign_root(root: &Root, key: &TestKey) -> Vec<u8> {
     let sig_hex = key.sign(&payload);
     let signed = Signed {
         signed: root.clone(),
-        signatures: vec![Signature { keyid: key.key_id.clone(), sig: sig_hex }],
+        signatures: vec![Signature {
+            keyid: key.key_id.clone(),
+            sig: sig_hex,
+        }],
     };
     serde_json::to_vec(&signed).unwrap()
 }
@@ -73,7 +80,10 @@ pub fn sign_timestamp(ts: &Timestamp, key: &TestKey) -> Vec<u8> {
     let sig_hex = key.sign(&payload);
     let signed = Signed {
         signed: ts.clone(),
-        signatures: vec![Signature { keyid: key.key_id.clone(), sig: sig_hex }],
+        signatures: vec![Signature {
+            keyid: key.key_id.clone(),
+            sig: sig_hex,
+        }],
     };
     serde_json::to_vec(&signed).unwrap()
 }
@@ -83,7 +93,10 @@ pub fn sign_snapshot(snap: &Snapshot, key: &TestKey) -> Vec<u8> {
     let sig_hex = key.sign(&payload);
     let signed = Signed {
         signed: snap.clone(),
-        signatures: vec![Signature { keyid: key.key_id.clone(), sig: sig_hex }],
+        signatures: vec![Signature {
+            keyid: key.key_id.clone(),
+            sig: sig_hex,
+        }],
     };
     serde_json::to_vec(&signed).unwrap()
 }
@@ -93,7 +106,10 @@ pub fn sign_targets(targets: &Targets, key: &TestKey) -> Vec<u8> {
     let sig_hex = key.sign(&payload);
     let signed = Signed {
         signed: targets.clone(),
-        signatures: vec![Signature { keyid: key.key_id.clone(), sig: sig_hex }],
+        signatures: vec![Signature {
+            keyid: key.key_id.clone(),
+            sig: sig_hex,
+        }],
     };
     serde_json::to_vec(&signed).unwrap()
 }
@@ -112,7 +128,10 @@ pub fn make_root(
     keys.insert(root_key.key_id.clone(), root_key.public_key.clone());
     keys.insert(targets_key.key_id.clone(), targets_key.public_key.clone());
     keys.insert(snapshot_key.key_id.clone(), snapshot_key.public_key.clone());
-    keys.insert(timestamp_key.key_id.clone(), timestamp_key.public_key.clone());
+    keys.insert(
+        timestamp_key.key_id.clone(),
+        timestamp_key.public_key.clone(),
+    );
 
     let mut roles = BTreeMap::new();
     roles.insert("root".to_string(), root_key.role_keys(1));
@@ -133,11 +152,14 @@ pub fn make_root(
 
 pub fn make_timestamp(snapshot_version: u32, expires: u64, version: u32) -> Timestamp {
     let mut meta = BTreeMap::new();
-    meta.insert("snapshot.json".to_string(), TimestampMeta {
-        version: snapshot_version,
-        length: None,
-        hashes: None,
-    });
+    meta.insert(
+        "snapshot.json".to_string(),
+        TimestampMeta {
+            version: snapshot_version,
+            length: None,
+            hashes: None,
+        },
+    );
     Timestamp {
         role_type: "timestamp".to_string(),
         spec_version: "1.0.0".to_string(),
@@ -149,11 +171,14 @@ pub fn make_timestamp(snapshot_version: u32, expires: u64, version: u32) -> Time
 
 pub fn make_snapshot(targets_version: u32, expires: u64, version: u32) -> Snapshot {
     let mut meta = BTreeMap::new();
-    meta.insert("targets.json".to_string(), SnapshotMeta {
-        version: targets_version,
-        length: None,
-        hashes: None,
-    });
+    meta.insert(
+        "targets.json".to_string(),
+        SnapshotMeta {
+            version: targets_version,
+            length: None,
+            hashes: None,
+        },
+    );
     Snapshot {
         role_type: "snapshot".to_string(),
         spec_version: "1.0.0".to_string(),
@@ -166,11 +191,17 @@ pub fn make_snapshot(targets_version: u32, expires: u64, version: u32) -> Snapsh
 pub fn make_targets(firmware: &[u8], expires: u64, version: u32) -> Targets {
     let hash = hex::encode(Sha256::digest(firmware));
     let mut targets_map = BTreeMap::new();
-    targets_map.insert("firmware.bin".to_string(), Target {
-        length: firmware.len() as u64,
-        hashes: Hashes { sha256: Some(hash), sha512: None },
-        custom: BTreeMap::new(),
-    });
+    targets_map.insert(
+        "firmware.bin".to_string(),
+        Target {
+            length: firmware.len() as u64,
+            hashes: Hashes {
+                sha256: Some(hash),
+                sha512: None,
+            },
+            custom: BTreeMap::new(),
+        },
+    );
     Targets {
         role_type: "targets".to_string(),
         spec_version: "1.0.0".to_string(),
@@ -196,7 +227,9 @@ pub struct MockTransport {
 
 impl MockTransport {
     pub fn new() -> Self {
-        Self { files: BTreeMap::new() }
+        Self {
+            files: BTreeMap::new(),
+        }
     }
 
     pub fn with(mut self, name: &str, data: Vec<u8>) -> Self {

@@ -3,8 +3,8 @@
 #[cfg(feature = "alloc")]
 use alloc::vec::Vec;
 
-use serde::{Deserialize, Serialize};
 use crate::schema::keys::KeyId;
+use serde::{Deserialize, Serialize};
 
 /// A hex-encoded signature value.
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]

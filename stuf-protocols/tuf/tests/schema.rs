@@ -2,11 +2,7 @@ mod common;
 
 use common::*;
 use stuf_tuf::schema::{
-    role::RoleType,
-    root::Root,
-    signed::Signed,
-    snapshot::Snapshot,
-    targets::Targets,
+    role::RoleType, root::Root, signed::Signed, snapshot::Snapshot, targets::Targets,
     timestamp::Timestamp,
 };
 
@@ -50,7 +46,10 @@ fn targets_roundtrip() {
     let bytes = serde_json::to_vec(&targets).unwrap();
     let decoded: Targets = serde_json::from_slice(&bytes).unwrap();
     assert!(decoded.get_target("firmware.bin").is_some());
-    assert_eq!(decoded.get_target("firmware.bin").unwrap().length, FIRMWARE.len() as u64);
+    assert_eq!(
+        decoded.get_target("firmware.bin").unwrap().length,
+        FIRMWARE.len() as u64
+    );
 }
 
 #[test]

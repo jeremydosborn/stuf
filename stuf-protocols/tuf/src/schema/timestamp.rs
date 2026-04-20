@@ -1,10 +1,10 @@
 //! TUF timestamp metadata — most frequently updated role.
 
 #[cfg(feature = "alloc")]
-use alloc::{string::String, collections::BTreeMap};
+use alloc::{collections::BTreeMap, string::String};
 
-use serde::{Deserialize, Serialize};
 use crate::schema::role::{Role, RoleType};
+use serde::{Deserialize, Serialize};
 
 /// Expected version and optional hash of snapshot.json
 /// as recorded in timestamp.json.
