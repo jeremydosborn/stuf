@@ -1,64 +1,59 @@
-use thiserror::Error;
+//! Unified error type for stuf-tuf.
+//! no_std compatible — no thiserror dependency.
 
-#[derive(Debug, Error)]
+use core::fmt;
+
+#[derive(Debug)]
 pub enum Error {
-    // Schema / deserialization
-    #[error("failed to deserialize metadata: {0}")]
-    Deserialize(#[from] serde_json::Error),
-
-    #[error("invalid key ID: {0}")]
-    InvalidKeyId(String),
-
-    #[error("invalid key type: {0}")]
-    InvalidKeyType(String),
-
-    #[error("invalid signature encoding: {0}")]
-    InvalidSignatureEncoding(String),
-
-    // Verification
-    #[error("metadata has expired")]
-    Expired,
-
-    #[error("signature threshold not met: needed {threshold}, got {valid}")]
+    /// Metadata could not be deserialized.
+    Deserialize,
+    /// Signature threshold not met.
     ThresholdNotMet { threshold: u32, valid: u32 },
-
-    #[error("no valid signatures found for role {role}")]
-    NoValidSignatures { role: String },
-
-    #[error("root version is not sequential: expected {expected}, got {actual}")]
-    NonSequentialRootVersion { expected: u32, actual: u32 },
-
-    #[error("version rollback detected: trusted {trusted}, received {received}")]
+    /// No valid signatures found.
+    NoValidSignatures,
+    /// Metadata has expired.
+    Expired,
+    /// Version rollback detected.
     VersionRollback { trusted: u32, received: u32 },
-
-    #[error("snapshot meta mismatch for {file}: {reason}")]
-    SnapshotMismatch { file: String, reason: String },
-
-    #[error("target hash mismatch for {target}")]
-    TargetHashMismatch { target: String },
-
-    #[error("target length mismatch for {target}: expected {expected}, got {actual}")]
-    TargetLengthMismatch {
-        target: String,
-        expected: u64,
-        actual: u64,
-    },
-
-    #[error("target not found: {0}")]
-    TargetNotFound(String),
-
-    #[error("delegation cycle detected at role {0}")]
-    DelegationCycle(String),
-
-    #[error("max delegation depth exceeded")]
-    DelegationDepthExceeded,
-
-    // Build
-    #[error("missing required field: {0}")]
-    MissingField(String),
-
-    #[error("role {0} has no keys assigned")]
-    NoKeysForRole(String),
+    /// Snapshot metadata mismatch.
+    SnapshotMismatch,
+    /// Target hash mismatch.
+    TargetHashMismatch,
+    /// Target length mismatch.
+    TargetLengthMismatch { expected: u64, actual: u64 },
+    /// Target not found in metadata.
+    TargetNotFound,
+    /// No keys for role.
+    NoKeysForRole,
+    /// Transport error.
+    Transport,
+    /// Encoding error.
+    Encoding,
 }
 
-pub type Result<T> = std::result::Result<T, Error>;
+impl fmt::Display for Error {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        match self {
+            Error::Deserialize => write!(f, "failed to deserialize metadata"),
+            Error::ThresholdNotMet { threshold, valid } => {
+                write!(f, "threshold not met: needed {threshold}, got {valid}")
+            }
+            Error::NoValidSignatures => write!(f, "no valid signatures found"),
+            Error::Expired => write!(f, "metadata has expired"),
+            Error::VersionRollback { trusted, received } => {
+                write!(f, "rollback detected: trusted {trusted}, received {received}")
+            }
+            Error::SnapshotMismatch => write!(f, "snapshot metadata mismatch"),
+            Error::TargetHashMismatch => write!(f, "target hash mismatch"),
+            Error::TargetLengthMismatch { expected, actual } => {
+                write!(f, "target length mismatch: expected {expected}, got {actual}")
+            }
+            Error::TargetNotFound => write!(f, "target not found"),
+            Error::NoKeysForRole => write!(f, "no keys for role"),
+            Error::Transport => write!(f, "transport error"),
+            Error::Encoding => write!(f, "encoding error"),
+        }
+    }
+}
+
+pub type Result<T> = core::result::Result<T, Error>;

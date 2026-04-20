@@ -1,9 +1,12 @@
-use crate::schema::role::{Role, RoleType};
-use chrono::{DateTime, Utc};
-use serde::{Deserialize, Serialize};
-use std::collections::HashMap;
+//! TUF snapshot metadata — records current version of every targets file.
 
-/// The expected version, length, and hashes of a metadata file
+#[cfg(feature = "alloc")]
+use alloc::{string::String, collections::BTreeMap};
+
+use serde::{Deserialize, Serialize};
+use crate::schema::role::{Role, RoleType};
+
+/// Expected version and optional hash of a metadata file
 /// as recorded in snapshot.json.
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct SnapshotMeta {
@@ -11,11 +14,11 @@ pub struct SnapshotMeta {
     #[serde(skip_serializing_if = "Option::is_none")]
     pub length: Option<u64>,
     #[serde(skip_serializing_if = "Option::is_none")]
-    pub hashes: Option<HashMap<String, String>>,
+    pub hashes: Option<BTreeMap<String, String>>,
 }
 
-/// The snapshot metadata — records the current version of every
-/// targets metadata file so clients can detect rollback attacks.
+/// Snapshot metadata — records the current version of every
+/// targets metadata file to prevent rollback attacks.
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Snapshot {
     #[serde(rename = "_type")]
@@ -23,15 +26,15 @@ pub struct Snapshot {
 
     pub spec_version: String,
     pub version: u32,
-    pub expires: DateTime<Utc>,
 
-    /// Map from metadata filename (e.g. "targets.json") to its
-    /// expected version and optional length/hash.
-    pub meta: HashMap<String, SnapshotMeta>,
+    /// Expiry as unix timestamp (seconds since epoch).
+    pub expires: u64,
+
+    /// Map from metadata filename to expected version.
+    pub meta: BTreeMap<String, SnapshotMeta>,
 }
 
 impl Snapshot {
-    /// Look up the expected metadata for a given filename.
     pub fn meta_for(&self, filename: &str) -> Option<&SnapshotMeta> {
         self.meta.get(filename)
     }
@@ -46,7 +49,7 @@ impl Role for Snapshot {
         self.version
     }
 
-    fn expires(&self) -> &DateTime<Utc> {
-        &self.expires
+    fn expires(&self) -> u64 {
+        self.expires
     }
 }

@@ -1,0 +1,25 @@
+[package]
+name = "toaster"
+version = "0.1.0"
+edition = "2021"
+description = "stuf TUF demo — ARM Cortex-M3 firmware updater"
+
+[[bin]]
+name = "toaster"
+path = "src/main.rs"
+
+[dependencies]
+# Crypto — no_std compatible
+sha2 = { version = "0.10", default-features = false }
+
+# ARM bare metal
+cortex-m    = { version = "0.7" }
+cortex-m-rt = { version = "0.7" }
+cortex-m-semihosting = { version = "0.5" }
+panic-semihosting    = { version = "0.5" }
+
+[profile.release]
+opt-level     = "s"   # optimize for size
+lto           = true
+codegen-units = 1
+debug         = false

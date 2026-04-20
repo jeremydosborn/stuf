@@ -1,15 +1,16 @@
+//! Type state primitives — the core trust guarantee.
+//!
+//! Unverified<T> → Verified<T> is the only path to trusted data.
+//! There is no other constructor for Verified<T>.
+//! This is the stuf-core guarantee expressed at the TUF protocol level.
+
 use crate::schema::signed::Signed;
 use serde::de::DeserializeOwned;
 
-/// A metadata payload that has not yet been verified.
+/// A metadata payload that has not been verified.
 ///
-/// The only way to obtain a `Verified<T>` is to pass an `Unverified<T>`
-/// through the appropriate verification function. Raw bytes and parsed
-/// but unverified structs are quarantined here — they cannot reach any
-/// code that requires trust without going through the verification gate.
-///
-/// The inner value is intentionally not `pub` — callers cannot reach
-/// inside without verifying first.
+/// The inner value is not pub — callers cannot reach inside
+/// without passing through a verification function.
 #[derive(Debug)]
 pub struct Unverified<T>(pub(crate) T);
 
@@ -18,72 +19,65 @@ where
     T: DeserializeOwned,
 {
     /// Parse raw bytes into an unverified envelope.
-    /// Deserialization succeeds here — signature and trust checks happen later.
-    pub fn from_bytes(bytes: &[u8]) -> crate::error::Result<Self> {
-        let signed: Signed<T> = serde_json::from_slice(bytes)?;
-        Ok(Unverified(signed))
+    /// Decoding is handled by the caller — bytes arrive already
+    /// decoded from whatever format stuf-env uses.
+    pub fn from_signed(signed: Signed<T>) -> Self {
+        Unverified(signed)
     }
-}
 
-impl<T> Unverified<Signed<T>> {
-    /// Expose the raw signatures for verification routines.
-    /// Only accessible within this crate — external callers cannot
-    /// read signatures off an unverified payload.
+    /// Expose signatures for verification routines.
+    /// Only accessible within this crate.
     pub(crate) fn signatures(&self) -> &[crate::schema::signed::Signature] {
         &self.0.signatures
     }
 
-    /// Expose the canonical bytes for signature verification.
-    pub(crate) fn canonical_bytes(&self) -> crate::error::Result<Vec<u8>>
-    where
-        T: serde::Serialize,
-    {
-        self.0.canonical_bytes()
+    /// Expose the signed payload for canonical encoding.
+    /// Only accessible within this crate.
+    pub(crate) fn payload(&self) -> &T {
+        &self.0.signed
     }
 
-    /// Consume the unverified envelope and produce a verified one.
-    /// Only callable from within this crate — verification functions
-    /// call this after confirming signatures meet the threshold.
+    /// Consume and produce a verified value.
+    /// Only callable from within this crate after threshold is met.
     pub(crate) fn into_verified(self) -> Verified<T> {
         Verified(self.0.signed)
     }
 }
 
-/// A metadata payload whose signatures have been checked against a
-/// trusted set of keys and found to meet the required threshold.
+/// A metadata payload whose signatures have been verified against
+/// a trusted key set and found to meet the required threshold.
 ///
-/// Callers outside this crate can only obtain a `Verified<T>` by going
-/// through the verification chain — there is no other constructor.
+/// The only way to obtain a Verified<T> is through the verification
+/// chain. There is no other constructor.
 #[derive(Debug, Clone)]
-pub struct Verified<T>(T);
+pub struct Verified<T>(pub(crate) T);
 
 impl<T> Verified<T> {
-    /// Access the verified inner value.
     pub fn get(&self) -> &T {
         &self.0
     }
 
-    /// Consume and unwrap the verified value.
     pub fn into_inner(self) -> T {
         self.0
     }
 }
 
-/// A clock abstraction injected by the caller.
+/// Clock abstraction — injected by the app, never owned by stuf-tuf.
 ///
-/// The library never calls `SystemTime::now()` directly — the updater
-/// app owns the time source. This matters for embedded targets where
-/// the system clock may not be reliable, and for testing.
-pub trait Clock: Send + Sync {
-    fn now(&self) -> chrono::DateTime<chrono::Utc>;
+/// Returns current time as unix timestamp (seconds since epoch).
+/// No chrono dependency. The app decides how to read time —
+/// hardware timer, RTOS tick, system clock, or fixed value for testing.
+pub trait Clock {
+    fn now_secs(&self) -> u64;
 }
 
-/// A fixed clock for testing — always returns the same instant.
+/// Fixed clock for testing — always returns the same instant.
 #[derive(Debug, Clone)]
-pub struct FixedClock(pub chrono::DateTime<chrono::Utc>);
+pub struct FixedClock(pub u64);
 
 impl Clock for FixedClock {
-    fn now(&self) -> chrono::DateTime<chrono::Utc> {
+    fn now_secs(&self) -> u64 {
         self.0
     }
 }
+

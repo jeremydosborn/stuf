@@ -2,8 +2,12 @@
 members = [
     "stuf-core",
     "stuf-env",
-    "stuf-protocols",
+    "stuf-protocols/tuf",
+    "stuf-examples/publisher",
     "stuf-examples",
+    "stuf-examples/toaster",
 ]
 
 resolver = "2"
+
+

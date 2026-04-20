@@ -1,5 +1,1 @@
-[workspace]
-members = [
-    "tuf",
-]
-resolver = "2"
+echo "# Protocol crates are registered individually in the root workspace." > stuf-protocols/Cargo.toml

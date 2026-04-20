@@ -1,14 +1,18 @@
-pub fn add(left: u64, right: u64) -> u64 {
-    left + right
-}
+#![cfg_attr(not(feature = "std"), no_std)]
 
-#[cfg(test)]
-mod tests {
-    use super::*;
+#[cfg(feature = "alloc")]
+extern crate alloc;
 
-    #[test]
-    fn it_works() {
-        let result = add(2, 2);
-        assert_eq!(result, 4);
-    }
-}
+pub mod encoding;
+pub mod env;
+pub mod error;
+pub mod schema;
+pub mod sign;
+pub mod verify;
+
+#[cfg(feature = "publisher")]
+pub mod build;
+
+pub use error::{Error, Result};
+pub use verify::chain::TrustAnchor;
+

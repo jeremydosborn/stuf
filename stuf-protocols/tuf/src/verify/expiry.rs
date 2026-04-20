@@ -1,16 +1,12 @@
-use crate::{
-    error::{Error, Result},
-    schema::role::Role,
-    verify::state::{Clock, Verified},
-};
+//! Expiry checking — used at each step of the verify chain.
 
-/// Check that a verified metadata item has not expired according to
-/// the provided clock. Called after signature verification — expiry
-/// is a separate concern from trust.
-pub fn check_expiry<T: Role>(metadata: &Verified<T>, clock: &dyn Clock) -> Result<()> {
-    let now = clock.now();
-    let expires = metadata.get().expires();
-    if now > *expires {
+use crate::{error::{Error, Result}, verify::state::Clock};
+
+/// Check that metadata has not expired.
+/// expires is unix timestamp (seconds since epoch).
+/// clock.now_secs() returns current unix timestamp.
+pub fn check_expiry<C: Clock>(expires: u64, clock: &C) -> Result<()> {
+    if clock.now_secs() > expires {
         Err(Error::Expired)
     } else {
         Ok(())

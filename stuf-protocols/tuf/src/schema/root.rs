@@ -1,50 +1,45 @@
+//! TUF root metadata — the trust anchor for a TUF repository.
+
+#[cfg(feature = "alloc")]
+use alloc::{string::String, collections::BTreeMap};
+
+use serde::{Deserialize, Serialize};
 use crate::schema::{
-    keys::PublicKey,
+    keys::{KeyId, PublicKey},
     role::{Role, RoleKeys, RoleType},
 };
-use chrono::{DateTime, Utc};
-use serde::{Deserialize, Serialize};
-use std::collections::HashMap;
-use crate::schema::keys::KeyId;
 
-/// The root metadata — the trust anchor for a TUF repository.
+/// Root metadata — lists which keys are authorized for each role
+/// and the threshold of signatures required.
 ///
-/// Root lists which keys are authorized for each top-level role and
-/// what threshold of signatures is required. Root rotation is performed
-/// by producing a new root signed by a threshold of both the old and
-/// new root keys.
+/// For MVP: root is baked into the binary at compile time via
+/// include_bytes!() and never fetched over the network.
+/// Root rotation is out of scope for MVP.
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Root {
-    /// Must be "root".
     #[serde(rename = "_type")]
     pub role_type: String,
 
-    /// Spec version this metadata conforms to.
     pub spec_version: String,
-
-    /// Monotonically increasing version number.
     pub version: u32,
 
-    /// Expiry timestamp in UTC.
-    pub expires: DateTime<Utc>,
+    /// Expiry as unix timestamp (seconds since epoch).
+    pub expires: u64,
 
-    /// Whether clients must use consistent snapshots.
     pub consistent_snapshot: bool,
 
-    /// All public keys referenced by any role in this root, keyed by KeyId.
-    pub keys: HashMap<KeyId, PublicKey>,
+    /// All public keys referenced by any role.
+    pub keys: BTreeMap<KeyId, PublicKey>,
 
-    /// The four top-level roles and their authorized keys + threshold.
-    pub roles: HashMap<String, RoleKeys>,
+    /// Top-level roles and their authorized keys + threshold.
+    pub roles: BTreeMap<String, RoleKeys>,
 }
 
 impl Root {
-    /// Look up the RoleKeys for a given top-level role.
     pub fn role_keys(&self, role: &RoleType) -> Option<&RoleKeys> {
         self.roles.get(&role.to_string())
     }
 
-    /// Look up a public key by ID.
     pub fn key(&self, id: &KeyId) -> Option<&PublicKey> {
         self.keys.get(id)
     }
@@ -59,7 +54,7 @@ impl Role for Root {
         self.version
     }
 
-    fn expires(&self) -> &DateTime<Utc> {
-        &self.expires
+    fn expires(&self) -> u64 {
+        self.expires
     }
 }

@@ -1,6 +1,7 @@
-pub mod chain;
-pub mod delegation;
-pub mod expiry;
+pub mod keys;
+pub mod role;
 pub mod root;
-pub mod state;
+pub mod signed;
+pub mod snapshot;
 pub mod targets;
+pub mod timestamp;

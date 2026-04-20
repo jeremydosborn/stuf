@@ -1,6 +1,11 @@
-use crate::schema::keys::KeyId;
+//! TUF role types and threshold signing requirements.
+
+#[cfg(feature = "alloc")]
+use alloc::vec::Vec;
+
 use serde::{Deserialize, Serialize};
-use std::fmt;
+use core::fmt;
+use crate::schema::keys::KeyId;
 
 /// The four top-level TUF roles.
 #[derive(Debug, Clone, PartialEq, Eq, Hash, Serialize, Deserialize)]
@@ -23,29 +28,11 @@ impl fmt::Display for RoleType {
     }
 }
 
-/// A role identifier — either a top-level role or a named delegated role.
-#[derive(Debug, Clone, PartialEq, Eq, Hash)]
-pub enum RoleId {
-    TopLevel(RoleType),
-    Delegated(String),
-}
-
-impl fmt::Display for RoleId {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        match self {
-            RoleId::TopLevel(r) => write!(f, "{r}"),
-            RoleId::Delegated(name) => write!(f, "{name}"),
-        }
-    }
-}
-
-/// The key IDs and signing threshold for a role.
+/// Key IDs and signing threshold for a role.
 /// Appears in root.json and in delegations.
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 pub struct RoleKeys {
-    /// The key IDs authorized to sign for this role.
     pub keyids: Vec<KeyId>,
-    /// Number of valid signatures required to trust this role's metadata.
     pub threshold: u32,
 }
 
@@ -60,12 +47,11 @@ impl RoleKeys {
 }
 
 /// Common behavior across all role metadata types.
-/// Implemented by Root, Targets, Snapshot, Timestamp.
 pub trait Role {
-    fn role_type() -> RoleType
-    where
-        Self: Sized;
-
+    fn role_type() -> RoleType where Self: Sized;
     fn version(&self) -> u32;
-    fn expires(&self) -> &chrono::DateTime<chrono::Utc>;
+    /// Expiry as unix timestamp (seconds since epoch).
+    /// No chrono dependency — the Clock trait in stuf-env
+    /// handles parsing and comparison.
+    fn expires(&self) -> u64;
 }

@@ -1,14 +1,16 @@
-pub fn add(left: u64, right: u64) -> u64 {
-    left + right
-}
+//! stuf-env — environment implementations for the stuf framework.
+//!
+//! Each implementation is gated behind a feature flag.
+//! Apps pull in only what they need via Cargo.toml features.
 
-#[cfg(test)]
-mod tests {
-    use super::*;
+#[cfg(feature = "crypto-ed25519")]
+pub mod crypto;
 
-    #[test]
-    fn it_works() {
-        let result = add(2, 2);
-        assert_eq!(result, 4);
-    }
-}
+#[cfg(feature = "transport-mock")]
+pub mod transport;
+
+#[cfg(any(feature = "clock-fixed", feature = "clock-std"))]
+pub mod clock;
+
+#[cfg(feature = "encoding-json")]
+pub mod encoding;

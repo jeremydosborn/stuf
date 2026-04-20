@@ -1,9 +1,12 @@
-use crate::schema::role::{Role, RoleType};
-use chrono::{DateTime, Utc};
-use serde::{Deserialize, Serialize};
-use std::collections::HashMap;
+//! TUF timestamp metadata — most frequently updated role.
 
-/// The expected version, length, and hashes of snapshot.json
+#[cfg(feature = "alloc")]
+use alloc::{string::String, collections::BTreeMap};
+
+use serde::{Deserialize, Serialize};
+use crate::schema::role::{Role, RoleType};
+
+/// Expected version and optional hash of snapshot.json
 /// as recorded in timestamp.json.
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct TimestampMeta {
@@ -11,14 +14,12 @@ pub struct TimestampMeta {
     #[serde(skip_serializing_if = "Option::is_none")]
     pub length: Option<u64>,
     #[serde(skip_serializing_if = "Option::is_none")]
-    pub hashes: Option<HashMap<String, String>>,
+    pub hashes: Option<BTreeMap<String, String>>,
 }
 
-/// The timestamp metadata — the most frequently updated TUF role.
-///
-/// Timestamp points to the current snapshot.json and is resigned on a
-/// short interval to bound the window of a freeze attack. Clients check
-/// timestamp first in the update sequence.
+/// Timestamp metadata — points to current snapshot.json.
+/// Resigned frequently to bound freeze attack window.
+/// Clients verify this first in the update sequence.
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Timestamp {
     #[serde(rename = "_type")]
@@ -26,14 +27,15 @@ pub struct Timestamp {
 
     pub spec_version: String,
     pub version: u32,
-    pub expires: DateTime<Utc>,
+
+    /// Expiry as unix timestamp (seconds since epoch).
+    pub expires: u64,
 
     /// Must contain exactly one entry: "snapshot.json".
-    pub meta: HashMap<String, TimestampMeta>,
+    pub meta: BTreeMap<String, TimestampMeta>,
 }
 
 impl Timestamp {
-    /// Returns the snapshot.json entry from the meta map.
     pub fn snapshot_meta(&self) -> Option<&TimestampMeta> {
         self.meta.get("snapshot.json")
     }
@@ -48,7 +50,7 @@ impl Role for Timestamp {
         self.version
     }
 
-    fn expires(&self) -> &DateTime<Utc> {
-        &self.expires
+    fn expires(&self) -> u64 {
+        self.expires
     }
 }
