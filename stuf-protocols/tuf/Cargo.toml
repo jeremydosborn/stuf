@@ -26,4 +26,9 @@ serde = { version = "1.0", default-features = false, features = ["derive"] }
 hex = { version = "0.4", default-features = false, features = ["alloc"] }
 
 [dev-dependencies]
-serde_json = "1.0"
+stuf-env = { path = "../../stuf-env", features = ["crypto-ed25519"] }
+ed25519-dalek = { version = "2.0", features = ["rand_core"] }
+rand = { version = "0.8" }
+sha2 = { version = "0.10" }
+hex = { version = "0.4" }
+serde_json = { version = "1.0" }

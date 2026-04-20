@@ -110,7 +110,7 @@ where
         let signed: Signed<Root> = encoding.decode(root_bytes)?;
         let unverified = Unverified::from_signed(signed);
 
-        let root_inner: Root = encoding.decode(root_bytes)?;
+        let root_inner = unverified.payload().clone();
         let role_keys = root_inner
             .role_keys(&RoleType::Root)
             .ok_or(Error::NoKeysForRole)?;
