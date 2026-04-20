@@ -16,7 +16,6 @@ stuf-core        # no_std trust kernel: Unverified<T> → Verified<T>, zero depe
 stuf-env         # crypto, transport, storage, clock, encoding
 stuf-protocols   # TUF, Uptane, in-toto, sigstore, notation
 stuf-examples    # embedded, RTOS, cloud examples
-old/             # frozen reference fork of AWS tough
 ```
 
 ## Design Principles
