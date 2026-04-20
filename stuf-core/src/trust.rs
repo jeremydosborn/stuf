@@ -6,15 +6,12 @@ pub struct Verified<T> {
 }
 
 impl<T> Verified<T> {
-    fn new(payload: T) -> Self {
-        Self { payload }
-    }
 
     pub fn into_inner(self) -> T {
         self.payload
     }
 
-    pub fn as_ref(&self) -> &T {
+    pub fn payload(&self) -> &T {
         &self.payload
     }
 }
