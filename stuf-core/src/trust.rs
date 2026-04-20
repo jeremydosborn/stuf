@@ -6,7 +6,6 @@ pub struct Verified<T> {
 }
 
 impl<T> Verified<T> {
-
     pub fn into_inner(self) -> T {
         self.payload
     }
