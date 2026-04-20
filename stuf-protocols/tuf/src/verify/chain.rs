@@ -76,6 +76,7 @@ where
     pub(crate) encoding: E,
 }
 
+#[allow(dead_code)]
 pub struct TargetsVerified<V, T, C, E>
 where
     V: Verifier,
