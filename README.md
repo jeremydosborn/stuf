@@ -1,6 +1,6 @@
 # stuf
 
-A protocol-agnostic supply chain security framework for Rust, designed to run across environments.
+A protocol-agnostic supply chain security framework for Rust, designed to run anywhere.
 
 ## Overview
 
