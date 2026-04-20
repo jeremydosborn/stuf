@@ -1,40 +1,34 @@
 # stuf
-A protocol-agnostic supply chain security framework for Rust, designed to run anywhere.
 
-## What stuf does
-stuf provides a single, minimal trust kernel that every protocol builds on.
-Declare your target environment and get a correct, minimal binary — from 
-bare metal microcontrollers to cloud services. The compiler assembles 
-exactly what you need. Nothing else is included.
+A protocol-agnostic supply chain security framework for Rust, designed to run across environments.
+
+## Overview
+
+stuf provides a minimal trust kernel as the foundation for all protocols.
+Developers declare a target environment and receive a correct, minimal binary.
+Targets range from bare-metal microcontrollers to cloud services.
+The compiler assembles only required components.
 
 ## Architecture
 
 ```
-stuf-core        # no_std trust kernel — Unverified<T> → Verified<T>, zero dependencies
-stuf-env         # crypto, transport, storage, clock, encoding, etc.
+stuf-core        # no_std trust kernel: Unverified<T> → Verified<T>, zero dependencies
+stuf-env         # crypto, transport, storage, clock, encoding
 stuf-protocols   # TUF, Uptane, in-toto, sigstore, notation
-stuf-examples    # embedded, RTOS, and cloud demos
-old/             # reference fork of AWS tough (frozen)
+stuf-examples    # embedded, RTOS, cloud examples
+old/             # frozen reference fork of AWS tough
 ```
 
 ## Design Principles
 
-- Core has zero dependencies and zero environment assumptions
-- Protocols are first class — TUF, in-toto, and sigstore have different trust shapes and stuf respects that
-- The compiler enforces trust boundaries — unverified payloads cannot reach code that requires verified ones
+* Zero dependencies and no environment assumptions in the core
+* Protocols treated as first-class, each with distinct trust models
+* Compiler-enforced trust boundaries preventing unverified data from reaching verified contexts
 
 ## Status
 
 Early stage. Core trust kernel complete. Protocol implementations in progress.
 
-## Roadmap
-- TUF client — in progress
-- TUF publisher — planned
-- Uptane — planned
-- in-toto — planned
-- sigstore — planned
-- notation — planned
-
 ## License
 
-Apache 2.0 / MIT
+Apache 2.0 or MIT
