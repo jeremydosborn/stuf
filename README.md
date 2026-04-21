@@ -30,4 +30,4 @@ Early stage. Core trust kernel complete. TUF protocol implemented; integration a
 
 ## License
 
-Apache 2.0 or MIT
+Apache 2.0
