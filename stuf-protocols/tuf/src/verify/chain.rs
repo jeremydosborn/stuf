@@ -6,7 +6,18 @@
 //! The chain is generic over Transport, Clock, Verifier, and Encoding —
 //! all injected by the app via stuf-env implementations.
 //!
+//! Internal chain state uses Checked<T> (signature checks passed).
+//! The final output — verify_target / verify_target_bytes — returns
+//! core's Verified<T>, the one true trust type.
+//!
+//! Two fetch modes:
+//!   - verify_timestamp() etc. — chain fetches via Transport
+//!   - verify_timestamp_bytes() etc. — caller passes pre-fetched &[u8]
+//!     For no_alloc bare metal where the app owns all buffers.
+//!
 //! MVP scope: trusted root baked in, no root rotation.
+
+use stuf_core::trust::Verified;
 
 use crate::{
     encoding::Encoding,
@@ -24,14 +35,13 @@ use crate::{
     verify::{
         expiry::check_expiry,
         signatures::verify_signatures,
-        state::{Clock, Unverified, Verified},
+        state::{Checked, Clock, Unverified},
     },
 };
 
+// ── Type states ───────────────────────────────────────────────────────────────
+
 /// Entry point — bootstrapped from a trusted root baked into the binary.
-///
-/// MVP: root is trusted unconditionally via include_bytes!().
-/// Root rotation is out of scope.
 pub struct TrustAnchor<V, T, C, E>
 where
     V: Verifier,
@@ -39,37 +49,37 @@ where
     C: Clock,
     E: Encoding,
 {
-    pub(crate) root: Verified<Root>,
+    pub(crate) root: Checked<Root>,
     pub(crate) verifier: V,
     pub(crate) transport: T,
     pub(crate) clock: C,
     pub(crate) encoding: E,
 }
 
-pub struct TimestampVerified<V, T, C, E>
+pub struct TimestampChecked<V, T, C, E>
 where
     V: Verifier,
     T: Transport,
     C: Clock,
     E: Encoding,
 {
-    pub(crate) root: Verified<Root>,
-    pub(crate) timestamp: Verified<Timestamp>,
+    pub(crate) root: Checked<Root>,
+    pub(crate) timestamp: Checked<Timestamp>,
     pub(crate) verifier: V,
     pub(crate) transport: T,
     pub(crate) clock: C,
     pub(crate) encoding: E,
 }
 
-pub struct SnapshotVerified<V, T, C, E>
+pub struct SnapshotChecked<V, T, C, E>
 where
     V: Verifier,
     T: Transport,
     C: Clock,
     E: Encoding,
 {
-    pub(crate) root: Verified<Root>,
-    pub(crate) snapshot: Verified<Snapshot>,
+    pub(crate) root: Checked<Root>,
+    pub(crate) snapshot: Checked<Snapshot>,
     pub(crate) verifier: V,
     pub(crate) transport: T,
     pub(crate) clock: C,
@@ -77,21 +87,23 @@ where
 }
 
 #[allow(dead_code)]
-pub struct TargetsVerified<V, T, C, E>
+pub struct TargetsChecked<V, T, C, E>
 where
     V: Verifier,
     T: Transport,
     C: Clock,
     E: Encoding,
 {
-    pub(crate) root: Verified<Root>,
-    pub(crate) snapshot: Verified<Snapshot>,
-    pub(crate) targets: Verified<Targets>,
+    pub(crate) root: Checked<Root>,
+    pub(crate) snapshot: Checked<Snapshot>,
+    pub(crate) targets: Checked<Targets>,
     pub(crate) verifier: V,
     pub(crate) transport: T,
     pub(crate) clock: C,
     pub(crate) encoding: E,
 }
+
+// ── TrustAnchor ───────────────────────────────────────────────────────────────
 
 impl<V, T, C, E> TrustAnchor<V, T, C, E>
 where
@@ -125,9 +137,9 @@ where
             &verifier,
         )?;
 
-        let verified = unverified.into_verified();
+        let checked = unverified.into_checked();
         Ok(Self {
-            root: verified,
+            root: checked,
             verifier,
             transport,
             clock,
@@ -135,14 +147,22 @@ where
         })
     }
 
-    /// Step 1 — fetch and verify timestamp.json
-    pub fn verify_timestamp(self) -> Result<TimestampVerified<V, T, C, E>> {
+    /// Step 1 — fetch and verify timestamp.json via Transport.
+    pub fn verify_timestamp(self) -> Result<TimestampChecked<V, T, C, E>> {
         let bytes = self
             .transport
             .fetch("timestamp.json")
             .map_err(|_| Error::Transport)?;
+        self.verify_timestamp_inner(bytes.as_ref())
+    }
 
-        let signed: Signed<Timestamp> = self.encoding.decode(bytes.as_ref())?;
+    /// Step 1 (no_alloc) — verify pre-fetched timestamp bytes.
+    pub fn verify_timestamp_bytes(self, bytes: &[u8]) -> Result<TimestampChecked<V, T, C, E>> {
+        self.verify_timestamp_inner(bytes)
+    }
+
+    fn verify_timestamp_inner(self, bytes: &[u8]) -> Result<TimestampChecked<V, T, C, E>> {
+        let signed: Signed<Timestamp> = self.encoding.decode(bytes)?;
         let unverified = Unverified::from_signed(signed);
 
         let role_keys = self
@@ -160,12 +180,12 @@ where
             &self.verifier,
         )?;
 
-        let verified = unverified.into_verified();
-        check_expiry(verified.get().expires(), &self.clock)?;
+        let checked = unverified.into_checked();
+        check_expiry(checked.get().expires(), &self.clock)?;
 
-        Ok(TimestampVerified {
+        Ok(TimestampChecked {
             root: self.root,
-            timestamp: verified,
+            timestamp: checked,
             verifier: self.verifier,
             transport: self.transport,
             clock: self.clock,
@@ -174,27 +194,37 @@ where
     }
 }
 
-impl<V, T, C, E> TimestampVerified<V, T, C, E>
+// ── TimestampChecked ──────────────────────────────────────────────────────────
+
+impl<V, T, C, E> TimestampChecked<V, T, C, E>
 where
     V: Verifier,
     T: Transport,
     C: Clock,
     E: Encoding,
 {
-    /// Step 2 — fetch and verify snapshot.json
-    pub fn verify_snapshot(self) -> Result<SnapshotVerified<V, T, C, E>> {
+    /// Step 2 — fetch and verify snapshot.json via Transport.
+    pub fn verify_snapshot(self) -> Result<SnapshotChecked<V, T, C, E>> {
+        let bytes = self
+            .transport
+            .fetch("snapshot.json")
+            .map_err(|_| Error::Transport)?;
+        self.verify_snapshot_inner(bytes.as_ref())
+    }
+
+    /// Step 2 (no_alloc) — verify pre-fetched snapshot bytes.
+    pub fn verify_snapshot_bytes(self, bytes: &[u8]) -> Result<SnapshotChecked<V, T, C, E>> {
+        self.verify_snapshot_inner(bytes)
+    }
+
+    fn verify_snapshot_inner(self, bytes: &[u8]) -> Result<SnapshotChecked<V, T, C, E>> {
         let snap_meta = self
             .timestamp
             .get()
             .snapshot_meta()
             .ok_or(Error::SnapshotMismatch)?;
 
-        let bytes = self
-            .transport
-            .fetch("snapshot.json")
-            .map_err(|_| Error::Transport)?;
-
-        let signed: Signed<Snapshot> = self.encoding.decode(bytes.as_ref())?;
+        let signed: Signed<Snapshot> = self.encoding.decode(bytes)?;
         let unverified = Unverified::from_signed(signed);
 
         let role_keys = self
@@ -212,21 +242,20 @@ where
             &self.verifier,
         )?;
 
-        let verified = unverified.into_verified();
+        let checked = unverified.into_checked();
 
-        // Version must match timestamp's record
-        if verified.get().version() < snap_meta.version {
+        if checked.get().version() < snap_meta.version {
             return Err(Error::VersionRollback {
                 trusted: snap_meta.version,
-                received: verified.get().version(),
+                received: checked.get().version(),
             });
         }
 
-        check_expiry(verified.get().expires(), &self.clock)?;
+        check_expiry(checked.get().expires(), &self.clock)?;
 
-        Ok(SnapshotVerified {
+        Ok(SnapshotChecked {
             root: self.root,
-            snapshot: verified,
+            snapshot: checked,
             verifier: self.verifier,
             transport: self.transport,
             clock: self.clock,
@@ -235,27 +264,37 @@ where
     }
 }
 
-impl<V, T, C, E> SnapshotVerified<V, T, C, E>
+// ── SnapshotChecked ───────────────────────────────────────────────────────────
+
+impl<V, T, C, E> SnapshotChecked<V, T, C, E>
 where
     V: Verifier,
     T: Transport,
     C: Clock,
     E: Encoding,
 {
-    /// Step 3 — fetch and verify targets.json
-    pub fn verify_targets(self) -> Result<TargetsVerified<V, T, C, E>> {
+    /// Step 3 — fetch and verify targets.json via Transport.
+    pub fn verify_targets(self) -> Result<TargetsChecked<V, T, C, E>> {
+        let bytes = self
+            .transport
+            .fetch("targets.json")
+            .map_err(|_| Error::Transport)?;
+        self.verify_targets_inner(bytes.as_ref())
+    }
+
+    /// Step 3 (no_alloc) — verify pre-fetched targets bytes.
+    pub fn verify_targets_bytes(self, bytes: &[u8]) -> Result<TargetsChecked<V, T, C, E>> {
+        self.verify_targets_inner(bytes)
+    }
+
+    fn verify_targets_inner(self, bytes: &[u8]) -> Result<TargetsChecked<V, T, C, E>> {
         let snap_meta = self
             .snapshot
             .get()
             .meta_for("targets.json")
             .ok_or(Error::SnapshotMismatch)?;
 
-        let bytes = self
-            .transport
-            .fetch("targets.json")
-            .map_err(|_| Error::Transport)?;
-
-        let signed: Signed<Targets> = self.encoding.decode(bytes.as_ref())?;
+        let signed: Signed<Targets> = self.encoding.decode(bytes)?;
         let unverified = Unverified::from_signed(signed);
 
         let role_keys = self
@@ -273,22 +312,21 @@ where
             &self.verifier,
         )?;
 
-        let verified = unverified.into_verified();
+        let checked = unverified.into_checked();
 
-        // Version must match snapshot's record
-        if verified.get().version() < snap_meta.version {
+        if checked.get().version() < snap_meta.version {
             return Err(Error::VersionRollback {
                 trusted: snap_meta.version,
-                received: verified.get().version(),
+                received: checked.get().version(),
             });
         }
 
-        check_expiry(verified.get().expires(), &self.clock)?;
+        check_expiry(checked.get().expires(), &self.clock)?;
 
-        Ok(TargetsVerified {
+        Ok(TargetsChecked {
             root: self.root,
             snapshot: self.snapshot,
-            targets: verified,
+            targets: checked,
             verifier: self.verifier,
             transport: self.transport,
             clock: self.clock,
@@ -297,24 +335,34 @@ where
     }
 }
 
-impl<V, T, C, E> TargetsVerified<V, T, C, E>
+// ── TargetsChecked ────────────────────────────────────────────────────────────
+
+impl<V, T, C, E> TargetsChecked<V, T, C, E>
 where
     V: Verifier,
     T: Transport,
     C: Clock,
     E: Encoding,
 {
-    /// Step 4 — fetch firmware and verify against targets metadata
+    /// Step 4 — fetch firmware via Transport and verify against targets metadata.
+    /// Returns core's Verified<Target> — the one true trust type.
     pub fn verify_target(&self, name: &str) -> Result<Verified<Target>> {
+        let bytes = self.transport.fetch(name).map_err(|_| Error::Transport)?;
+        self.verify_target_inner(name, bytes.as_ref())
+    }
+
+    /// Step 4 (no_alloc) — verify pre-fetched firmware bytes.
+    /// Returns core's Verified<Target> — the one true trust type.
+    pub fn verify_target_bytes(&self, name: &str, bytes: &[u8]) -> Result<Verified<Target>> {
+        self.verify_target_inner(name, bytes)
+    }
+
+    fn verify_target_inner(&self, name: &str, bytes: &[u8]) -> Result<Verified<Target>> {
         let target_meta = self
             .targets
             .get()
             .get_target(name)
             .ok_or(Error::TargetNotFound)?;
-
-        let bytes = self.transport.fetch(name).map_err(|_| Error::Transport)?;
-
-        let bytes = bytes.as_ref();
 
         // Length check
         if bytes.len() as u64 != target_meta.length {
@@ -329,14 +377,15 @@ where
             .verify_hash(bytes, &target_meta.hashes)
             .map_err(|_| Error::TargetHashMismatch)?;
 
-        Ok(Verified(target_meta.clone()))
+        // Full TUF chain passed — return core's Verified<T>
+        Ok(Verified::new(target_meta.clone()))
     }
 
-    pub fn targets(&self) -> &Verified<Targets> {
+    pub fn targets(&self) -> &Checked<Targets> {
         &self.targets
     }
 
-    pub fn root(&self) -> &Verified<Root> {
+    pub fn root(&self) -> &Checked<Root> {
         &self.root
     }
 }

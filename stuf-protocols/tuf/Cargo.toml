@@ -6,24 +6,20 @@ description = "TUF protocol implementation for the stuf supply chain security fr
 license = "Apache-2.0 OR MIT"
 
 [features]
-# Memory model
 default = ["std"]
 std = ["alloc", "serde/std"]
-alloc = ["serde/alloc"]
-
-# Protocol role
+alloc = ["serde/alloc", "hex/alloc"]
 client = []
 publisher = []
 full = ["client", "publisher"]
-
-# Platform bundles
-platform-bare-metal = ["client"]
+platform-bare-metal = ["alloc", "client"]
 platform-rtos = ["alloc", "client"]
 platform-cloud = ["std", "full"]
 
 [dependencies]
-serde = { version = "1.0", default-features = false, features = ["derive"] }
-hex = { version = "0.4", default-features = false, features = ["alloc"] }
+serde = { version = "=1.0.219", default-features = false, features = ["derive"] }
+hex = { version = "0.4", default-features = false }
+stuf-core = { path = "../../stuf-core" }
 
 [dev-dependencies]
 stuf-env = { path = "../../stuf-env", features = ["crypto-ed25519"] }

@@ -9,7 +9,7 @@ use ed25519_dalek::{Signer, SigningKey};
 use rand::rngs::OsRng;
 use serde::{Deserialize, Serialize};
 use sha2::{Digest, Sha256};
-use std::collections::HashMap;
+use std::collections::BTreeMap;
 
 // ── TUF metadata types (minimal, for signing) ─────────────────────────────
 
@@ -39,8 +39,8 @@ struct RootSigned {
     version: u32,
     expires: u64,
     consistent_snapshot: bool,
-    keys: HashMap<String, Key>,
-    roles: HashMap<String, RoleKeys>,
+    keys: BTreeMap<String, Key>,
+    roles: BTreeMap<String, RoleKeys>,
 }
 
 #[derive(Serialize, Deserialize)]
@@ -61,7 +61,7 @@ struct TargetsSigned {
     spec_version: String,
     version: u32,
     expires: u64,
-    targets: HashMap<String, Target>,
+    targets: BTreeMap<String, Target>,
 }
 
 #[derive(Serialize, Deserialize)]
@@ -76,7 +76,7 @@ struct SnapshotSigned {
     spec_version: String,
     version: u32,
     expires: u64,
-    meta: HashMap<String, SnapshotMeta>,
+    meta: BTreeMap<String, SnapshotMeta>,
 }
 
 #[derive(Serialize, Deserialize)]
@@ -91,7 +91,7 @@ struct TimestampSigned {
     spec_version: String,
     version: u32,
     expires: u64,
-    meta: HashMap<String, TimestampMeta>,
+    meta: BTreeMap<String, TimestampMeta>,
 }
 
 #[derive(Serialize, Deserialize)]
@@ -228,14 +228,14 @@ fn build_repo() -> Repo {
     println!();
 
     // Build key map for root
-    let mut keys = HashMap::new();
+    let mut keys = BTreeMap::new();
     keys.insert(root_key.key_id.clone(), root_key.to_tuf_key());
     keys.insert(targets_key.key_id.clone(), targets_key.to_tuf_key());
     keys.insert(snapshot_key.key_id.clone(), snapshot_key.to_tuf_key());
     keys.insert(timestamp_key.key_id.clone(), timestamp_key.to_tuf_key());
 
     // Build roles map for root
-    let mut roles = HashMap::new();
+    let mut roles = BTreeMap::new();
     roles.insert(
         "root".to_string(),
         RoleKeys {
@@ -277,12 +277,12 @@ fn build_repo() -> Repo {
         roles,
     };
     let root = sign_metadata(&root_signed_payload, &root_key);
-    let root_json = serde_json::to_vec_pretty(&root).unwrap();
+    let root_json = serde_json::to_vec(&root).unwrap();
     println!("✓");
 
     // Targets
     print!("signing targets.json...   ");
-    let mut targets = HashMap::new();
+    let mut targets = BTreeMap::new();
     targets.insert(
         firmware_name.to_string(),
         Target {
@@ -300,12 +300,12 @@ fn build_repo() -> Repo {
         targets,
     };
     let targets_meta = sign_metadata(&targets_signed_payload, &targets_key);
-    let targets_json = serde_json::to_vec_pretty(&targets_meta).unwrap();
+    let targets_json = serde_json::to_vec(&targets_meta).unwrap();
     println!("✓");
 
     // Snapshot
     print!("signing snapshot.json...  ");
-    let mut meta = HashMap::new();
+    let mut meta = BTreeMap::new();
     meta.insert("targets.json".to_string(), SnapshotMeta { version: 1 });
     let snapshot_signed_payload = SnapshotSigned {
         role_type: "snapshot".to_string(),
@@ -315,12 +315,12 @@ fn build_repo() -> Repo {
         meta,
     };
     let snapshot_meta = sign_metadata(&snapshot_signed_payload, &snapshot_key);
-    let snapshot_json = serde_json::to_vec_pretty(&snapshot_meta).unwrap();
+    let snapshot_json = serde_json::to_vec(&snapshot_meta).unwrap();
     println!("✓");
 
     // Timestamp
     print!("signing timestamp.json... ");
-    let mut ts_meta = HashMap::new();
+    let mut ts_meta = BTreeMap::new();
     ts_meta.insert("snapshot.json".to_string(), TimestampMeta { version: 1 });
     let timestamp_signed_payload = TimestampSigned {
         role_type: "timestamp".to_string(),
@@ -330,7 +330,7 @@ fn build_repo() -> Repo {
         meta: ts_meta,
     };
     let timestamp_meta = sign_metadata(&timestamp_signed_payload, &timestamp_key);
-    let timestamp_json = serde_json::to_vec_pretty(&timestamp_meta).unwrap();
+    let timestamp_json =  serde_json::to_vec(&timestamp_meta).unwrap();
     println!("✓");
 
     println!();

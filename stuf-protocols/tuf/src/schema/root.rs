@@ -1,7 +1,7 @@
 //! TUF root metadata — the trust anchor for a TUF repository.
 
-#[cfg(feature = "alloc")]
-use alloc::{collections::BTreeMap, string::String};
+extern crate alloc;
+use alloc::{collections::BTreeMap, string::{String, ToString}};
 
 use crate::schema::{
     keys::{KeyId, PublicKey},

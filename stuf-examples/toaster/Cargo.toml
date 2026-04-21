@@ -9,17 +9,20 @@ name = "toaster"
 path = "src/main.rs"
 
 [dependencies]
-# Crypto — no_std compatible
 sha2 = { version = "0.10", default-features = false }
-
-# ARM bare metal
-cortex-m    = { version = "0.7" }
+serde = { version = "=1.0.219", default-features = false }
+serde_json = { version = "1.0", default-features = false, features = ["alloc"] }
+stuf-core = { path = "../../stuf-core" }
+stuf-tuf  = { path = "../../stuf-protocols/tuf", default-features = false, features = ["platform-bare-metal"] }
+stuf-env  = { path = "../../stuf-env", default-features = false, features = ["alloc", "crypto-ed25519"] }
+cortex-m = { version = "0.7", features = ["critical-section-single-core"] }
 cortex-m-rt = { version = "0.7" }
 cortex-m-semihosting = { version = "0.5" }
 panic-semihosting    = { version = "0.5" }
+embedded-alloc = "0.6"
 
 [profile.release]
-opt-level     = "s"   # optimize for size
+opt-level     = "s"
 lto           = true
 codegen-units = 1
 debug         = false

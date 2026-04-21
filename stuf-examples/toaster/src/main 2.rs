@@ -1,12 +1,9 @@
+//! stuf toaster demo — TUF firmware updater on ARM Cortex-M3
+
 #![no_std]
 #![no_main]
 
 extern crate alloc;
-
-use embedded_alloc::LlffHeap as Heap;
-
-#[global_allocator]
-static HEAP: Heap = Heap::empty();
 
 use cortex_m_rt::entry;
 use cortex_m_semihosting::hprintln;
@@ -104,14 +101,20 @@ impl Encoding for BareMetalJson {
     where
         T: for<'de> serde::Deserialize<'de>,
     {
-        serde_json::from_slice::<T>(bytes).map_err(|_| Error::Deserialize)
+        let (val, _) = serde_json_core::from_slice::<T>(bytes)
+            .map_err(|_| Error::Deserialize)?;
+        Ok(val)
     }
 
     fn canonical<T>(&self, value: &T) -> Result<alloc::vec::Vec<u8>, Error>
     where
         T: serde::Serialize,
     {
-        serde_json::to_vec(value).map_err(|_| Error::Encoding)
+        let mut buf = alloc::vec![0u8; META_BUF];
+        let len = serde_json_core::to_slice(value, &mut buf)
+            .map_err(|_| Error::Encoding)?;
+        buf.truncate(len);
+        Ok(buf)
     }
 }
 
@@ -122,18 +125,11 @@ fn flash_write(firmware: &[u8]) {
 
 #[entry]
 fn main() -> ! {
-    // Init heap — 8KB from static buffer, no OS needed
-    {
-        const HEAP_SIZE: usize = 8192;
-        static mut HEAP_MEM: [u8; HEAP_SIZE] = [0; HEAP_SIZE];
-        unsafe { HEAP.init(HEAP_MEM.as_ptr() as usize, HEAP_SIZE) }
-    }
-
     hprintln!("");
     hprintln!("╔══════════════════════════════════════════════╗");
     hprintln!("║  stuf v0.1.0 — TUF firmware updater         ║");
     hprintln!("║  target: ARM Cortex-M3 (lm3s6965evb)        ║");
-    hprintln!("║  flash:  256KB  ram: 64KB                    ║");
+    hprintln!("║  flash:  256KB  ram: 64KB  no heap          ║");
     hprintln!("╚══════════════════════════════════════════════╝");
     hprintln!("");
     hprintln!("installed: firmware v{}", CURRENT_VERSION);

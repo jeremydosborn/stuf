@@ -3,6 +3,9 @@
 //! Each implementation is gated behind a feature flag.
 //! Apps pull in only what they need via Cargo.toml features.
 
+#![no_std]
+extern crate alloc;
+
 #[cfg(feature = "crypto-ed25519")]
 pub mod crypto;
 

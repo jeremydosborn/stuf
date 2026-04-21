@@ -1,8 +1,11 @@
-//! Type state primitives — the core trust guarantee.
+//! Type state primitives for the TUF verification chain.
 //!
-//! Unverified<T> → Verified<T> is the only path to trusted data.
-//! There is no other constructor for Verified<T>.
-//! This is the stuf-core guarantee expressed at the TUF protocol level.
+//! Checked<T> is internal chain bookkeeping — it means "signatures
+//! passed for this metadata role." It is NOT core's Verified<T>.
+//!
+//! Core's Verified<T> is returned at the end of the chain when
+//! the entire TUF update sequence succeeds, including firmware
+//! hash and length checks.
 
 use crate::schema::signed::Signed;
 use serde::de::DeserializeOwned;
@@ -19,8 +22,6 @@ where
     T: DeserializeOwned,
 {
     /// Parse raw bytes into an unverified envelope.
-    /// Decoding is handled by the caller — bytes arrive already
-    /// decoded from whatever format stuf-env uses.
     pub fn from_signed(signed: Signed<T>) -> Self {
         Unverified(signed)
     }
@@ -37,22 +38,22 @@ where
         &self.0.signed
     }
 
-    /// Consume and produce a verified value.
+    /// Consume and produce a checked value.
     /// Only callable from within this crate after threshold is met.
-    pub(crate) fn into_verified(self) -> Verified<T> {
-        Verified(self.0.signed)
+    pub(crate) fn into_checked(self) -> Checked<T> {
+        Checked(self.0.signed)
     }
 }
 
 /// A metadata payload whose signatures have been verified against
 /// a trusted key set and found to meet the required threshold.
 ///
-/// The only way to obtain a Verified<T> is through the verification
-/// chain. There is no other constructor.
+/// This is internal to stuf-tuf's chain — it tracks which metadata
+/// roles have passed signature checks. It is NOT core's Verified<T>.
 #[derive(Debug, Clone)]
-pub struct Verified<T>(pub(crate) T);
+pub struct Checked<T>(pub(crate) T);
 
-impl<T> Verified<T> {
+impl<T> Checked<T> {
     pub fn get(&self) -> &T {
         &self.0
     }
