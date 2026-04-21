@@ -26,7 +26,7 @@ encoding-json = ["serde_json"]
 demo = ["crypto-ed25519", "transport-mock", "clock-fixed", "encoding-json"]
 
 [dependencies]
-stuf-tuf = { path = "../stuf-protocols/tuf", default-features = false }
+stuf-tuf = { path = "../stuf-protocols/tuf", default-features = false, features = ["alloc"] }
 
 # Crypto — optional
 ed25519-dalek = { version = "2.0", default-features = false, features = ["alloc"], optional = true }
