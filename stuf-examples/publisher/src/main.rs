@@ -330,7 +330,7 @@ fn build_repo() -> Repo {
         meta: ts_meta,
     };
     let timestamp_meta = sign_metadata(&timestamp_signed_payload, &timestamp_key);
-    let timestamp_json =  serde_json::to_vec(&timestamp_meta).unwrap();
+    let timestamp_json = serde_json::to_vec(&timestamp_meta).unwrap();
     println!("✓");
 
     println!();
