@@ -347,27 +347,27 @@ where
     /// Step 4 — fetch firmware via Transport and verify against targets metadata.
     /// Returns core's Verified<Target> — the one true trust type.
     pub fn verify_target(&self, name: &str) -> Result<Verified<Target>> {
-    // Check target exists in trusted targets metadata first
-    self.targets
-        .get()
-        .get_target(name)
-        .ok_or(Error::TargetNotFound)?;
+        // Check target exists in trusted targets metadata first
+        self.targets
+            .get()
+            .get_target(name)
+            .ok_or(Error::TargetNotFound)?;
 
-    let bytes = self.transport.fetch(name).map_err(|_| Error::Transport)?;
-    self.verify_target_inner(name, bytes.as_ref())
-}
+        let bytes = self.transport.fetch(name).map_err(|_| Error::Transport)?;
+        self.verify_target_inner(name, bytes.as_ref())
+    }
 
     /// Step 4 (no_alloc) — verify pre-fetched firmware bytes.
     /// Returns core's Verified<Target> — the one true trust type.
-   pub fn verify_target_bytes(&self, name: &str, bytes: &[u8]) -> Result<Verified<Target>> {
-    // Same pre-check as verify_target()
-    self.targets
-        .get()
-        .get_target(name)
-        .ok_or(Error::TargetNotFound)?;
+    pub fn verify_target_bytes(&self, name: &str, bytes: &[u8]) -> Result<Verified<Target>> {
+        // Same pre-check as verify_target()
+        self.targets
+            .get()
+            .get_target(name)
+            .ok_or(Error::TargetNotFound)?;
 
-    self.verify_target_inner(name, bytes)
-}
+        self.verify_target_inner(name, bytes)
+    }
 
     fn verify_target_inner(&self, name: &str, bytes: &[u8]) -> Result<Verified<Target>> {
         let target_meta = self
