@@ -335,7 +335,6 @@ fn build_repo() -> Repo {
     println!("repository ready");
     println!();
 
-
     Repo {
         root_json,
         targets_json,
