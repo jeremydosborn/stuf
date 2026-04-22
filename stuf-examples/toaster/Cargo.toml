@@ -21,8 +21,3 @@ cortex-m-semihosting = { version = "0.5" }
 panic-semihosting    = { version = "0.5" }
 embedded-alloc = "0.6"
 
-[profile.release]
-opt-level     = "s"
-lto           = true
-codegen-units = 1
-debug         = false

@@ -197,8 +197,6 @@ struct Repo {
     snapshot_json: Vec<u8>,
     timestamp_json: Vec<u8>,
     firmware: Vec<u8>,
-    root_key_hex: String,
-    root_key_id: String,
 }
 
 fn build_repo() -> Repo {
@@ -337,8 +335,6 @@ fn build_repo() -> Repo {
     println!("repository ready");
     println!();
 
-    let root_key_hex = root_key.public_hex.clone();
-    let root_key_id = root_key.key_id.clone();
 
     Repo {
         root_json,
@@ -346,8 +342,6 @@ fn build_repo() -> Repo {
         snapshot_json,
         timestamp_json,
         firmware: firmware.to_vec(),
-        root_key_hex,
-        root_key_id,
     }
 }
 
@@ -358,7 +352,7 @@ fn save_repo(repo: &Repo) {
     use std::path::Path;
 
     // Save to publisher-repo/ for semihosting transport
-    let repo_dir = Path::new("stuf-examples/publisher-repo");
+    let repo_dir = Path::new("stuf-examples/.generated/publisher-repo");
     fs::create_dir_all(repo_dir).expect("create publisher-repo");
 
     fs::write(repo_dir.join("root.json"), &repo.root_json).expect("write root.json");
@@ -372,7 +366,7 @@ fn save_repo(repo: &Repo) {
     fs::create_dir_all(factory_dir).expect("create factory dir");
     fs::write(factory_dir.join("root.json"), &repo.root_json).expect("write factory root.json");
 
-    println!("saved to stuf-examples/publisher-repo/");
+    println!("saved to stuf-examples/.generated/publisher-repo/");
     println!("saved root to stuf-examples/toaster/factory/");
     println!();
 }
