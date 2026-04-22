@@ -20,7 +20,6 @@ jobs:
       - name: Install Rust stable
         uses: dtolnay/rust-toolchain@stable
         with:
-          targets: thumbv7m-none-eabi
           components: rustfmt, clippy
 
       - name: Cache cargo
@@ -58,10 +57,3 @@ jobs:
       - name: Test — stuf-env
         run: cargo test -p stuf-env
 
-      # ── Build toaster (cross-compile, no run) ────────────────────────────
-      - name: Build toaster (ARM Cortex-M3)
-        run: cargo build --release --target thumbv7m-none-eabi -p toaster
-
-      # ── Build publisher ──────────────────────────────────────────────────
-      - name: Build publisher
-        run: cargo build --release -p publisher

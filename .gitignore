@@ -4,8 +4,20 @@
 .DS_Store
 old/target/
 
-# demo publisher repo artifacts
-stuf-examples/publisher-repo/*
+# Generated demo artifacts
+stuf-examples/.generated/
 
-# demo publisher repo artifacts
-stuf-examples/publisher-repo/*
+# Factory artifacts
+stuf-examples/toaster/factory/
+
+# Legacy demo publisher path
+stuf-examples/publisher-repo/
+
+# Keys / secrets
+*.pem
+*.key
+id_rsa
+id_ed25519
+keys/
+secrets/
+private/
