@@ -26,7 +26,7 @@ const NEW_VERSION: &str = "1.1.0";
 const TARGET_FIRMWARE: &str = "toaster-firmware-1.1.0.bin";
 const META_BUF: usize = 4096;
 const FIRMWARE_BUF: usize = 2048;
-const PATH_BUF: usize = 64;
+const PATH_BUF: usize = 128;
 
 mod semi {
     use cortex_m_semihosting::nr;
@@ -61,7 +61,7 @@ mod semi {
 }
 
 fn build_path(filename: &str, buf: &mut [u8; PATH_BUF]) -> usize {
-    let prefix = b"stuf-examples/publisher-repo/";
+    let prefix = b"stuf-examples/.generated/publisher-repo/";
     let fname = filename.as_bytes();
     let total = prefix.len() + fname.len() + 1;
     debug_assert!(total <= PATH_BUF, "path too long");
