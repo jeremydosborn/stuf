@@ -1,4 +1,3 @@
-
 /// Canonical JSON encoding for deterministic signing.
 ///
 /// Implementations must produce a stable, deterministic byte representation
