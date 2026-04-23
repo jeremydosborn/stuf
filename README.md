@@ -26,7 +26,7 @@ stuf-examples    # embedded, RTOS, cloud examples
 
 ## Status
 
-Early stage. Core trust kernel complete. TUF protocol implemented; integration and spec alignment in progress.
+Early stage. Core trust kernel complete. TUF protocol v.01 implemented; integration and spec alignment in progress.
 
 ## License
 
