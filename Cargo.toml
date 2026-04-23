@@ -5,7 +5,7 @@ members = [
     "stuf-protocols/tuf",
     "stuf-examples/publisher",
     "stuf-examples",
-    "stuf-examples/toaster", "stuf-canonical",
+    "stuf-examples/toaster", "stuf-encoding",
 ]
 
 resolver = "2"

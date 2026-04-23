@@ -543,6 +543,13 @@ name = "stuf-core"
 version = "0.1.0"
 
 [[package]]
+name = "stuf-encoding"
+version = "0.1.0"
+dependencies = [
+ "serde",
+]
+
+[[package]]
 name = "stuf-env"
 version = "0.1.0"
 dependencies = [
