@@ -13,7 +13,8 @@ The compiler assembles only required components.
 
 ```
 stuf-core        # no_std trust kernel: Unverified<T> → Verified<T>, zero dependencies
-stuf-env         # crypto, transport, storage, clock, encoding
+stuf-encoding    # deterministic signing inputs: canonical JSON, PAE, etc.
+stuf-env         # pluggable runtime: crypto, transport, storage, clock
 stuf-protocols   # TUF, Uptane, in-toto, sigstore, notation
 stuf-examples    # embedded, RTOS, cloud examples
 ```
