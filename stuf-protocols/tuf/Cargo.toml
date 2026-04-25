@@ -17,14 +17,14 @@ platform-rtos = ["alloc", "client"]
 platform-cloud = ["std", "full"]
 
 # Canonical JSON — pick one. JCS is default.
-canonical-jcs = ["serde_json"]
+canonical-jcs = []
 
 [dependencies]
 serde = { version = "=1.0.219", default-features = false, features = ["derive"] }
 hex = { version = "0.4", default-features = false }
 stuf-core = { path = "../../stuf-core" }
 stuf-encoding = { path = "../../stuf-encoding", default-features = false, features = ["alloc"] }
-serde_json = { version = "1.0", default-features = false, features = ["alloc"], optional = true }
+serde_json = { version = "1.0", default-features = false, features = ["alloc"] }
 
 [dev-dependencies]
 stuf-env = { path = "../../stuf-env", features = ["crypto-ed25519"] }
