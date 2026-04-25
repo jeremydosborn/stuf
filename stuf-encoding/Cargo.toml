@@ -8,4 +8,4 @@ default = ["alloc"]
 alloc = ["serde/alloc"]
 
 [dependencies]
-serde = { version = "=1.0.219", default-features = false }
+serde = { version = "=1.0.228", default-features = false }
