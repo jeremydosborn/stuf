@@ -1,3 +1,4 @@
+#![allow(clippy::empty_loop, static_mut_refs)]
 #![no_std]
 #![no_main]
 
@@ -13,9 +14,8 @@ use cortex_m_semihosting::hprintln;
 use panic_semihosting as _;
 
 use stuf_env::crypto::Ed25519Verifier;
-use stuf_tuf::encoding::Encoding;
+use stuf_tuf::encoding::TufEncoding;
 use stuf_tuf::env::transport::Transport;
-use stuf_tuf::error::Error;
 use stuf_tuf::verify::chain::TrustAnchor;
 use stuf_tuf::verify::state::FixedClock;
 
@@ -71,16 +71,12 @@ fn build_path(filename: &str, buf: &mut [u8; PATH_BUF]) -> usize {
     total
 }
 
-#[derive(Clone)]
 struct SemihostingTransport;
-
 #[derive(Debug)]
 struct SemiError;
-
 impl Transport for SemihostingTransport {
     type Buffer = alloc::vec::Vec<u8>;
     type Error = SemiError;
-
     fn fetch(&self, id: &str) -> Result<alloc::vec::Vec<u8>, SemiError> {
         let mut path = [0u8; PATH_BUF];
         build_path(id, &mut path);
@@ -118,25 +114,6 @@ fn fetch_to_buf<'a>(filename: &str, buf: &'a mut [u8]) -> Option<&'a [u8]> {
     }
 }
 
-#[derive(Clone)]
-struct BareMetalJson;
-
-impl Encoding for BareMetalJson {
-    fn decode<T>(&self, bytes: &[u8]) -> Result<T, Error>
-    where
-        T: for<'de> serde::Deserialize<'de>,
-    {
-        serde_json::from_slice::<T>(bytes).map_err(|_| Error::Deserialize)
-    }
-
-    fn canonical<T>(&self, value: &T) -> Result<alloc::vec::Vec<u8>, Error>
-    where
-        T: serde::Serialize,
-    {
-        serde_json::to_vec(value).map_err(|_| Error::Encoding)
-    }
-}
-
 fn flash_write(firmware: &[u8]) {
     let checksum = firmware
         .iter()
@@ -152,7 +129,7 @@ fn flash_write(firmware: &[u8]) {
 fn main() -> ! {
     // Init heap — 8KB from static buffer, no OS needed
     {
-        const HEAP_SIZE: usize = 8192;
+        const HEAP_SIZE: usize = 16384;
         static mut HEAP_MEM: [u8; HEAP_SIZE] = [0; HEAP_SIZE];
         unsafe { HEAP.init(HEAP_MEM.as_ptr() as usize, HEAP_SIZE) }
     }
@@ -204,7 +181,7 @@ fn main() -> ! {
         Ed25519Verifier,
         SemihostingTransport,
         clock,
-        BareMetalJson,
+        TufEncoding,
     )
     .unwrap_or_else(|e| {
         hprintln!("  root FAILED: {:?}", e);

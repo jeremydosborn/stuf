@@ -35,7 +35,7 @@ fn correct_hash_passes() {
         Ed25519Verifier,
         transport,
         FixedClock(NOW),
-        JsonEncoding,
+        TufEncoding,
     )
     .unwrap();
     let result = anchor
@@ -58,7 +58,7 @@ fn tampered_firmware_hash_rejected() {
         Ed25519Verifier,
         transport,
         FixedClock(NOW),
-        JsonEncoding,
+        TufEncoding,
     )
     .unwrap();
     let result = anchor
@@ -81,7 +81,7 @@ fn length_mismatch_rejected() {
         Ed25519Verifier,
         transport,
         FixedClock(NOW),
-        JsonEncoding,
+        TufEncoding,
     )
     .unwrap();
     let result = anchor
@@ -103,7 +103,7 @@ fn unknown_target_rejected() {
         Ed25519Verifier,
         transport,
         FixedClock(NOW),
-        JsonEncoding,
+        TufEncoding,
     )
     .unwrap();
     let result = anchor

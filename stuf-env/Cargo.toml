@@ -19,11 +19,9 @@ transport-mock = []
 clock-fixed = []
 clock-std = []
 
-# Encoding implementations
-encoding-json = ["serde_json"]
 
 # Convenience bundles for demo
-demo = ["crypto-ed25519", "transport-mock", "clock-fixed", "encoding-json"]
+demo = ["crypto-ed25519", "transport-mock", "clock-fixed"]
 
 [dependencies]
 stuf-tuf = { path = "../stuf-protocols/tuf", default-features = false, features = ["alloc"] }
@@ -32,8 +30,6 @@ stuf-tuf = { path = "../stuf-protocols/tuf", default-features = false, features 
 ed25519-dalek = { version = "2.0", default-features = false, features = ["alloc"], optional = true }
 sha2 = { version = "0.10", default-features = false, optional = true }
 
-# Encoding — optional
-serde_json = { version = "1.0", optional = true }
 
 # Always needed
 serde = { version = "1.0", default-features = false, features = ["derive"] }

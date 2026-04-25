@@ -21,3 +21,5 @@ hex = "0.4"
 
 # HTTP server
 tiny_http = "0.12"
+stuf-encoding = { path = "../../stuf-encoding" }
+stuf-tuf = { path = "../../stuf-protocols/tuf", features = ["canonical-jcs"] }

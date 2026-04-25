@@ -62,8 +62,12 @@ impl TestKey {
 
 // ── Signing helpers ───────────────────────────────────────────────────────────
 
+fn canonical_bytes<T: serde::Serialize>(value: &T) -> Vec<u8> {
+    TufEncoding.canonicalize(value).expect("canonicalize")
+}
+
 pub fn sign_root(root: &Root, key: &TestKey) -> Vec<u8> {
-    let payload = serde_json::to_vec(root).unwrap();
+    let payload = canonical_bytes(root);
     let sig_hex = key.sign(&payload);
     let signed = Signed {
         signed: root.clone(),
@@ -76,7 +80,7 @@ pub fn sign_root(root: &Root, key: &TestKey) -> Vec<u8> {
 }
 
 pub fn sign_timestamp(ts: &Timestamp, key: &TestKey) -> Vec<u8> {
-    let payload = serde_json::to_vec(ts).unwrap();
+    let payload = canonical_bytes(ts);
     let sig_hex = key.sign(&payload);
     let signed = Signed {
         signed: ts.clone(),
@@ -89,7 +93,7 @@ pub fn sign_timestamp(ts: &Timestamp, key: &TestKey) -> Vec<u8> {
 }
 
 pub fn sign_snapshot(snap: &Snapshot, key: &TestKey) -> Vec<u8> {
-    let payload = serde_json::to_vec(snap).unwrap();
+    let payload = canonical_bytes(snap);
     let sig_hex = key.sign(&payload);
     let signed = Signed {
         signed: snap.clone(),
@@ -102,7 +106,7 @@ pub fn sign_snapshot(snap: &Snapshot, key: &TestKey) -> Vec<u8> {
 }
 
 pub fn sign_targets(targets: &Targets, key: &TestKey) -> Vec<u8> {
-    let payload = serde_json::to_vec(targets).unwrap();
+    let payload = canonical_bytes(targets);
     let sig_hex = key.sign(&payload);
     let signed = Signed {
         signed: targets.clone(),
@@ -248,15 +252,8 @@ impl stuf_tuf::env::transport::Transport for MockTransport {
 }
 
 // ── JsonEncoding ──────────────────────────────────────────────────────────────
+// Replaced by TufEncoding from stuf-tuf. Tests use it directly.
 
-pub struct JsonEncoding;
-
-impl stuf_tuf::encoding::Encoding for JsonEncoding {
-    fn decode<T: serde::de::DeserializeOwned>(&self, bytes: &[u8]) -> stuf_tuf::error::Result<T> {
-        serde_json::from_slice(bytes).map_err(|_| Error::Deserialize)
-    }
-
-    fn canonical<T: serde::Serialize>(&self, value: &T) -> stuf_tuf::error::Result<Vec<u8>> {
-        serde_json::to_vec(value).map_err(|_| Error::Encoding)
-    }
-}
+use stuf_encoding::Canonicalize;
+pub use stuf_tuf::encoding::TufEncoding;
+pub type JsonEncoding = TufEncoding;

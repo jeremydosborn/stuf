@@ -54,7 +54,7 @@ fn snapshot_rollback_rejected() {
         Ed25519Verifier,
         transport,
         FixedClock(NOW),
-        JsonEncoding,
+        TufEncoding,
     )
     .unwrap();
     let result = anchor.verify_timestamp().unwrap().verify_snapshot();
@@ -82,7 +82,7 @@ fn targets_rollback_rejected() {
         Ed25519Verifier,
         transport,
         FixedClock(NOW),
-        JsonEncoding,
+        TufEncoding,
     )
     .unwrap();
     let result = anchor
@@ -114,7 +114,7 @@ fn equal_version_accepted() {
         Ed25519Verifier,
         transport,
         FixedClock(NOW),
-        JsonEncoding,
+        TufEncoding,
     )
     .unwrap();
     let result = anchor

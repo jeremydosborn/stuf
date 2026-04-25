@@ -1,3 +1,7 @@
-pub mod canonical;
+#![no_std]
+extern crate alloc;
 
-pub use canonical::CanonicalJson;
+mod heap;
+
+pub use heap::canonicalize::{Canonicalize, EncodeError};
+pub use heap::decode::Decode;

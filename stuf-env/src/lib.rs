@@ -14,6 +14,3 @@ pub mod transport;
 
 #[cfg(any(feature = "clock-fixed", feature = "clock-std"))]
 pub mod clock;
-
-#[cfg(feature = "encoding-json")]
-pub mod encoding;

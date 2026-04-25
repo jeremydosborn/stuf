@@ -35,7 +35,7 @@ fn full_chain_succeeds() {
         Ed25519Verifier,
         transport,
         FixedClock(NOW),
-        JsonEncoding,
+        TufEncoding,
     )
     .unwrap();
     let result = anchor
@@ -59,7 +59,7 @@ fn tampered_root_rejected() {
         Ed25519Verifier,
         transport,
         FixedClock(NOW),
-        JsonEncoding
+        TufEncoding
     )
     .is_err());
 }
@@ -83,7 +83,7 @@ fn wrong_key_for_timestamp_rejected() {
         Ed25519Verifier,
         transport,
         FixedClock(NOW),
-        JsonEncoding,
+        TufEncoding,
     )
     .unwrap();
     assert!(anchor.verify_timestamp().is_err());
@@ -107,7 +107,7 @@ fn expired_timestamp_rejected() {
         Ed25519Verifier,
         transport,
         FixedClock(NOW),
-        JsonEncoding,
+        TufEncoding,
     )
     .unwrap();
     assert!(matches!(anchor.verify_timestamp(), Err(Error::Expired)));
@@ -134,7 +134,7 @@ fn expired_snapshot_rejected() {
         Ed25519Verifier,
         transport,
         FixedClock(NOW),
-        JsonEncoding,
+        TufEncoding,
     )
     .unwrap();
     assert!(matches!(
@@ -166,7 +166,7 @@ fn expired_targets_rejected() {
         Ed25519Verifier,
         transport,
         FixedClock(NOW),
-        JsonEncoding,
+        TufEncoding,
     )
     .unwrap();
     assert!(matches!(
@@ -196,7 +196,7 @@ fn transport_error_propagated() {
         Ed25519Verifier,
         transport,
         FixedClock(NOW),
-        JsonEncoding,
+        TufEncoding,
     )
     .unwrap();
     assert!(matches!(anchor.verify_timestamp(), Err(Error::Transport)));
@@ -224,7 +224,7 @@ fn mix_and_match_metadata_rejected() {
         Ed25519Verifier,
         transport,
         FixedClock(NOW),
-        JsonEncoding,
+        TufEncoding,
     )
     .unwrap();
     assert!(anchor

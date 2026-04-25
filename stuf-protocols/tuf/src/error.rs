@@ -63,3 +63,12 @@ impl fmt::Display for Error {
 }
 
 pub type Result<T> = core::result::Result<T, Error>;
+
+impl From<stuf_encoding::EncodeError> for Error {
+    fn from(e: stuf_encoding::EncodeError) -> Self {
+        match e {
+            stuf_encoding::EncodeError::Decode => Error::Deserialize,
+            stuf_encoding::EncodeError::Canonicalize => Error::Encoding,
+        }
+    }
+}

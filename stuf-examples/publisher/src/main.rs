@@ -10,6 +10,8 @@ use rand::rngs::OsRng;
 use serde::{Deserialize, Serialize};
 use sha2::{Digest, Sha256};
 use std::collections::BTreeMap;
+use stuf_encoding::Canonicalize;
+use stuf_tuf::encoding::TufEncoding;
 
 // ── TUF metadata types (minimal, for signing) ─────────────────────────────
 
@@ -121,7 +123,7 @@ impl KeyPair {
         let public_hex = hex::encode(public_bytes);
         // Key ID is SHA256 of the public key bytes
         let mut hasher = Sha256::new();
-        hasher.update(&public_bytes);
+        hasher.update(public_bytes);
         let key_id = hex::encode(hasher.finalize());
         Self {
             signing_key,
@@ -151,7 +153,7 @@ fn sign_metadata<T: Serialize + serde::de::DeserializeOwned>(
     keypair: &KeyPair,
 ) -> Signed<T> {
     // Serialize the signed portion to canonical JSON
-    let canonical = serde_json::to_vec(payload).expect("serialize");
+    let canonical = TufEncoding.canonicalize(payload).expect("canonicalize");
     let sig_hex = keypair.sign(&canonical);
     Signed {
         signed: serde_json::from_slice(&canonical).expect("round-trip"),

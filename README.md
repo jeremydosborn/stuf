@@ -19,6 +19,28 @@ stuf-protocols   # TUF, Uptane, in-toto, sigstore, notation
 stuf-examples    # embedded, RTOS, cloud examples
 ```
 
+## Embedded Profile
+
+stuf is currently designed as `no_std + alloc`: it avoids the Rust standard library and operating-system runtime assumptions, while using a small heap for practical matters.
+
+This makes stuf suitable for embedded targets with an allocator today, while leaving a path to a future strict no-alloc profile using borrowed data structures, fixed-capacity buffers, streaming verification, and heapless protocol implementations.
+
+## Encoding
+
+stuf-encoding defines traits for canonical serialization and decoding.
+Protocol crates implement these traits with their chosen format.
+
+stuf-tuf currently implements RFC 8785 (JSON Canonicalization Scheme) for
+signature verification, with an OLPC canonical JSON stub for legacy TUF
+interop. Implementations live in `stuf-protocols/tuf/src/encoding/` behind
+compile-time feature flags (`canonical-jcs` is the default).
+
+The JCS canonicalizer uses `serde_json::Value` for tree walking, which
+increased heap usage from 8KB to 16KB on the toaster demo. Optimizing this
+with a streaming canonicalizer is planned for a future change.
+
+A strict no-heap encoding path is planned.
+
 ## Design Principles
 
 * Zero dependencies and no environment assumptions in the core
@@ -27,7 +49,7 @@ stuf-examples    # embedded, RTOS, cloud examples
 
 ## Status
 
-Early stage. Core trust kernel complete. TUF protocol v.01 implemented; integration and spec alignment in progress.
+Early stage. Core trust kernel complete. TUF protocol v.02 implemented; integration and spec alignment in progress.
 
 ## License
 

@@ -21,6 +21,7 @@ jobs:
         uses: dtolnay/rust-toolchain@stable
         with:
           components: rustfmt, clippy
+          targets: thumbv7m-none-eabi
 
       - name: Cache cargo
         uses: actions/cache@v4
@@ -41,15 +42,24 @@ jobs:
       - name: Clippy — stuf-core
         run: cargo clippy -p stuf-core -- -D warnings
 
+      - name: Clippy — stuf-encoding
+        run: cargo clippy -p stuf-encoding -- -D warnings
+
       - name: Clippy — stuf-tuf
         run: cargo clippy -p stuf-tuf -- -D warnings
 
       - name: Clippy — stuf-env
         run: cargo clippy -p stuf-env -- -D warnings
 
+      - name: Clippy — publisher
+        run: cargo clippy -p publisher -- -D warnings
+
       # ── Tests ────────────────────────────────────────────────────────────
       - name: Test — stuf-core
         run: cargo test -p stuf-core
+
+      - name: Test — stuf-encoding
+        run: cargo test -p stuf-encoding
 
       - name: Test — stuf-tuf
         run: cargo test -p stuf-tuf
@@ -57,3 +67,9 @@ jobs:
       - name: Test — stuf-env
         run: cargo test -p stuf-env
 
+      # ── Build ────────────────────────────────────────────────────────────
+      - name: Build — publisher
+        run: cargo build -p publisher
+
+      - name: Build — toaster (ARM Cortex-M3)
+        run: cargo build --target thumbv7m-none-eabi -p toaster --release

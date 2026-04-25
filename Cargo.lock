@@ -370,6 +370,8 @@ dependencies = [
  "serde",
  "serde_json",
  "sha2",
+ "stuf-encoding",
+ "stuf-tuf",
  "tiny_http",
 ]
 
@@ -556,7 +558,6 @@ dependencies = [
  "ed25519-dalek",
  "hex",
  "serde",
- "serde_json",
  "sha2",
  "stuf-tuf",
 ]
@@ -576,6 +577,7 @@ dependencies = [
  "serde_json",
  "sha2",
  "stuf-core",
+ "stuf-encoding",
  "stuf-env",
 ]
 
@@ -642,7 +644,6 @@ dependencies = [
  "embedded-alloc",
  "panic-semihosting",
  "serde",
- "serde_json",
  "sha2",
  "stuf-core",
  "stuf-env",

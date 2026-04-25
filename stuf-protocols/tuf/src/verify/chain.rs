@@ -18,9 +18,9 @@
 //! MVP scope: trusted root baked in, no root rotation.
 
 use stuf_core::trust::Verified;
+use stuf_encoding::{Canonicalize, Decode};
 
 use crate::{
-    encoding::Encoding,
     env::transport::Transport,
     error::{Error, Result},
     schema::{
@@ -47,7 +47,7 @@ where
     V: Verifier,
     T: Transport,
     C: Clock,
-    E: Encoding,
+    E: Canonicalize + Decode,
 {
     pub(crate) root: Checked<Root>,
     pub(crate) verifier: V,
@@ -61,7 +61,7 @@ where
     V: Verifier,
     T: Transport,
     C: Clock,
-    E: Encoding,
+    E: Canonicalize + Decode,
 {
     pub(crate) root: Checked<Root>,
     pub(crate) timestamp: Checked<Timestamp>,
@@ -76,7 +76,7 @@ where
     V: Verifier,
     T: Transport,
     C: Clock,
-    E: Encoding,
+    E: Canonicalize + Decode,
 {
     pub(crate) root: Checked<Root>,
     pub(crate) snapshot: Checked<Snapshot>,
@@ -92,7 +92,7 @@ where
     V: Verifier,
     T: Transport,
     C: Clock,
-    E: Encoding,
+    E: Canonicalize + Decode,
 {
     pub(crate) root: Checked<Root>,
     pub(crate) snapshot: Checked<Snapshot>,
@@ -110,7 +110,7 @@ where
     V: Verifier,
     T: Transport,
     C: Clock,
-    E: Encoding,
+    E: Canonicalize + Decode,
 {
     /// Bootstrap from a trusted root baked in at compile time.
     pub fn new(
@@ -128,7 +128,7 @@ where
             .role_keys(&RoleType::Root)
             .ok_or(Error::NoKeysForRole)?;
 
-        let canonical = encoding.canonical(unverified.payload())?;
+        let canonical = encoding.canonicalize(unverified.payload())?;
         verify_signatures(
             unverified.signatures(),
             role_keys,
@@ -171,7 +171,7 @@ where
             .role_keys(&RoleType::Timestamp)
             .ok_or(Error::NoKeysForRole)?;
 
-        let canonical = self.encoding.canonical(unverified.payload())?;
+        let canonical = self.encoding.canonicalize(unverified.payload())?;
         verify_signatures(
             unverified.signatures(),
             role_keys,
@@ -201,7 +201,7 @@ where
     V: Verifier,
     T: Transport,
     C: Clock,
-    E: Encoding,
+    E: Canonicalize + Decode,
 {
     /// Step 2 — fetch and verify snapshot.json via Transport.
     pub fn verify_snapshot(self) -> Result<SnapshotChecked<V, T, C, E>> {
@@ -233,7 +233,7 @@ where
             .role_keys(&RoleType::Snapshot)
             .ok_or(Error::NoKeysForRole)?;
 
-        let canonical = self.encoding.canonical(unverified.payload())?;
+        let canonical = self.encoding.canonicalize(unverified.payload())?;
         verify_signatures(
             unverified.signatures(),
             role_keys,
@@ -271,7 +271,7 @@ where
     V: Verifier,
     T: Transport,
     C: Clock,
-    E: Encoding,
+    E: Canonicalize + Decode,
 {
     /// Step 3 — fetch and verify targets.json via Transport.
     pub fn verify_targets(self) -> Result<TargetsChecked<V, T, C, E>> {
@@ -303,7 +303,7 @@ where
             .role_keys(&RoleType::Targets)
             .ok_or(Error::NoKeysForRole)?;
 
-        let canonical = self.encoding.canonical(unverified.payload())?;
+        let canonical = self.encoding.canonicalize(unverified.payload())?;
         verify_signatures(
             unverified.signatures(),
             role_keys,
@@ -342,7 +342,7 @@ where
     V: Verifier,
     T: Transport,
     C: Clock,
-    E: Encoding,
+    E: Canonicalize + Decode,
 {
     /// Step 4 — fetch firmware via Transport and verify against targets metadata.
     /// Returns core's Verified<Target> — the one true trust type.

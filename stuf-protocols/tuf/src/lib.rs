@@ -11,5 +11,6 @@ pub mod verify;
 #[cfg(feature = "publisher")]
 pub mod build;
 
+pub use encoding::TufEncoding;
 pub use error::{Error, Result};
 pub use verify::chain::TrustAnchor;

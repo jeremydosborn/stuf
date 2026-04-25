@@ -1,28 +1,42 @@
-//! Encoding trait — how TUF metadata is serialized and deserialized.
-//!
-//! stuf-tuf does not own any serialization logic.
-//! Implementations live in stuf-env behind feature flags:
-//! - encoding-json  → serde_json
-//! - encoding-cbor  → ciborium
-//!
-//! The app selects which via Cargo.toml features.
+pub mod canonicalize;
+pub mod decode;
 
-use crate::error::Error;
+use alloc::vec::Vec;
+use stuf_encoding::{Canonicalize, Decode, EncodeError};
 
-/// Encoding abstraction for TUF metadata.
-///
-/// Decodes raw bytes into typed schema structs and produces
-/// canonical bytes for signature verification.
-pub trait Encoding {
-    /// Decode bytes into a typed metadata value.
-    fn decode<T>(&self, bytes: &[u8]) -> Result<T, Error>
+pub use decode::json::JsonDecoder;
+
+#[cfg(feature = "canonical-jcs")]
+pub use canonicalize::jcs::Jcs;
+
+/// Convenience type — implements both Canonicalize + Decode for TUF.
+/// Pass this to TrustAnchor::new().
+#[derive(Debug, Clone, Copy)]
+pub struct TufEncoding;
+
+impl Canonicalize for TufEncoding {
+    fn canonicalize<T>(&self, value: &T) -> Result<Vec<u8>, EncodeError>
     where
-        T: for<'de> serde::Deserialize<'de>;
+        T: serde::Serialize,
+    {
+        #[cfg(feature = "canonical-jcs")]
+        {
+            Jcs.canonicalize(value)
+        }
 
-    /// Produce canonical bytes for signature verification.
-    /// For JSON this is canonical JSON (sorted keys, no whitespace).
-    /// The encoding format defines what canonical means.
-    fn canonical<T>(&self, value: &T) -> Result<alloc::vec::Vec<u8>, Error>
+        #[cfg(not(feature = "canonical-jcs"))]
+        {
+            let _ = value;
+            Err(EncodeError::Canonicalize)
+        }
+    }
+}
+
+impl Decode for TufEncoding {
+    fn decode<T>(&self, bytes: &[u8]) -> Result<T, EncodeError>
     where
-        T: serde::Serialize;
+        T: for<'de> serde::Deserialize<'de>,
+    {
+        JsonDecoder.decode(bytes)
+    }
 }
