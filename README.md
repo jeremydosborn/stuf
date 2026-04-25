@@ -39,7 +39,7 @@ The JCS canonicalizer uses `serde_json::Value` for tree walking, which
 increased heap usage from 8KB to 16KB on the toaster demo. Optimizing this
 with a streaming canonicalizer is planned for a future change.
 
-A strict no-heap encoding path is planned.
+A strict no-heap encoding path is also planned.
 
 ## Design Principles
 
