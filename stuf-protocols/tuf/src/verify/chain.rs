@@ -347,6 +347,11 @@ where
     /// Step 4 — fetch firmware via Transport and verify against targets metadata.
     /// Returns core's Verified<Target> — the one true trust type.
     pub fn verify_target(&self, name: &str) -> Result<Verified<Target>> {
+        self.targets
+            .get()
+            .get_target(name)
+            .ok_or(Error::TargetNotFound)?;
+
         let bytes = self.transport.fetch(name).map_err(|_| Error::Transport)?;
         self.verify_target_inner(name, bytes.as_ref())
     }
