@@ -1,8 +1,5 @@
 //! The TUF signed envelope — every metadata file is Signed<T>.
 
-#[cfg(feature = "alloc")]
-use alloc::vec::Vec;
-
 use crate::schema::keys::KeyId;
 use serde::{Deserialize, Serialize};
 
@@ -26,6 +23,3 @@ pub struct Signed<T> {
     pub signed: T,
     pub signatures: Vec<Signature>,
 }
-
-#[cfg(feature = "alloc")]
-use alloc::string::String;

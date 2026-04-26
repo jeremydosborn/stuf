@@ -3,6 +3,7 @@
 
 use core::fmt;
 
+#[non_exhaustive]
 #[derive(Debug)]
 pub enum Error {
     /// Metadata could not be deserialized.
@@ -13,8 +14,8 @@ pub enum Error {
     NoValidSignatures,
     /// Metadata has expired.
     Expired,
-    /// Version rollback detected.
-    VersionRollback { trusted: u32, received: u32 },
+    /// Version mismatch detected.
+    VersionMismatch { expected: u32, received: u32 },
     /// Snapshot metadata mismatch.
     SnapshotMismatch,
     /// Target hash mismatch.
@@ -40,10 +41,10 @@ impl fmt::Display for Error {
             }
             Error::NoValidSignatures => write!(f, "no valid signatures found"),
             Error::Expired => write!(f, "metadata has expired"),
-            Error::VersionRollback { trusted, received } => {
+            Error::VersionMismatch { expected, received } => {
                 write!(
                     f,
-                    "rollback detected: trusted {trusted}, received {received}"
+                    "version mismatch: expected {expected}, received {received}"
                 )
             }
             Error::SnapshotMismatch => write!(f, "snapshot metadata mismatch"),
