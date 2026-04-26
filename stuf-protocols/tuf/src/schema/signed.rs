@@ -3,6 +3,9 @@
 use crate::schema::keys::KeyId;
 use serde::{Deserialize, Serialize};
 
+use alloc::string::String;
+use alloc::vec::Vec;
+
 /// A hex-encoded signature value.
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 pub struct Signature {
