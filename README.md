@@ -1,6 +1,6 @@
 # stuf
 
-Supply chain security for Rust. Runs anywhere from bare-metal to cloud.
+Supply chain security for Rust. Runs anywhere from bare-metal to cloud and beyond.
 
 ## Architecture
 
