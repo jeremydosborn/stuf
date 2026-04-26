@@ -60,7 +60,7 @@ fn snapshot_rollback_rejected() {
     let result = anchor.verify_timestamp().unwrap().verify_snapshot();
     assert!(matches!(
         result,
-        Err(Error::VersionRollback {
+        Err(Error::VersionMismatch {
             trusted: 5,
             received: 1
         })
