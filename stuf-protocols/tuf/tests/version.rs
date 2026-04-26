@@ -61,7 +61,7 @@ fn snapshot_rollback_rejected() {
     assert!(matches!(
         result,
         Err(Error::VersionMismatch {
-            trusted: 5,
+            expected: 5,
             received: 1
         })
     ));
@@ -93,8 +93,8 @@ fn targets_rollback_rejected() {
         .verify_targets();
     assert!(matches!(
         result,
-        Err(Error::VersionRollback {
-            trusted: 5,
+        Err(Error::VersionMismatch {
+            expected: 5,
             received: 1
         })
     ));
