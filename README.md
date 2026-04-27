@@ -8,7 +8,7 @@ Supply chain security for Rust. Runs anywhere from bare-metal to cloud and beyon
 stuf-core         # trust kernel: Verified<T>, Verifier<T>, no_std
 stuf-encoding     # canonical serialization and decoding traits
 stuf-env          # platform bindings: crypto, transport, storage, clock
-stuf-protocols    # TUF (implemented), Uptane, in-toto, Sigstore, Notation, SBOM, etc.
+stuf-protocols    # TUF to start
 stuf-examples     # toaster demo (ARM Cortex-M3), publisher
 ```
 
