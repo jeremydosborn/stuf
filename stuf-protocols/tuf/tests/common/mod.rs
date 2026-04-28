@@ -8,7 +8,6 @@ use ed25519_dalek::{Signer, SigningKey};
 use rand::rngs::OsRng;
 use sha2::{Digest, Sha256};
 
-use stuf_tuf::error::Error;
 use stuf_tuf::schema::{
     keys::{KeyId, KeyType, KeyValue, PublicKey, SignatureScheme},
     role::RoleKeys,
