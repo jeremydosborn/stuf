@@ -35,7 +35,7 @@ A no-heap path is planned.
 
 ## Status
 
-Early. Core complete. TUF v0.2 implemented. Integration and spec
+Early. Core complete. TUF v0.5 implemented. Integration and spec
 alignment in progress.
 
 ## License

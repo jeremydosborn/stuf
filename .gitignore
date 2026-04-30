@@ -21,3 +21,6 @@ id_ed25519
 keys/
 secrets/
 private/
+**/target/
+.cargo/
+**/target/
