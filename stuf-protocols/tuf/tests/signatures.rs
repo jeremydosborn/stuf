@@ -21,14 +21,7 @@ fn valid_ed25519_signature_passes() {
         sig: sig_hex,
     }];
 
-    assert!(verify_signatures(
-        &sigs,
-        &key.role_keys(1),
-        &available,
-        canonical,
-
-    )
-    .is_ok());
+    assert!(verify_signatures(&sigs, &key.role_keys(1), &available, canonical,).is_ok());
 }
 
 #[test]
@@ -44,13 +37,7 @@ fn tampered_payload_rejected() {
         sig: sig_hex,
     }];
 
-    let result = verify_signatures(
-        &sigs,
-        &key.role_keys(1),
-        &available,
-        b"tampered payload",
-
-    );
+    let result = verify_signatures(&sigs, &key.role_keys(1), &available, b"tampered payload");
     assert!(result.is_err());
 }
 
@@ -71,14 +58,7 @@ fn wrong_key_rejected() {
         sig: sig_hex,
     }];
 
-    assert!(verify_signatures(
-        &sigs,
-        &different_key.role_keys(1),
-        &available,
-        canonical,
-
-    )
-    .is_err());
+    assert!(verify_signatures(&sigs, &different_key.role_keys(1), &available, canonical,).is_err());
 }
 
 #[test]
@@ -144,14 +124,7 @@ fn unknown_keyid_ignored() {
         sig: key.sign(canonical),
     }];
 
-    assert!(verify_signatures(
-        &sigs,
-        &key.role_keys(1),
-        &available,
-        canonical,
-
-    )
-    .is_err());
+    assert!(verify_signatures(&sigs, &key.role_keys(1), &available, canonical,).is_err());
 }
 
 #[test]

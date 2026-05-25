@@ -20,8 +20,8 @@
 
 use stuf_core::trust::Verified;
 use stuf_encoding::{Canonicalize, Decode};
-use stuf_env::transport::Transport;
 use stuf_env::clock::Clock;
+use stuf_env::transport::Transport;
 
 use crate::{
     error::{Error, Result},
@@ -106,12 +106,7 @@ where
     E: Canonicalize + Decode,
 {
     /// Bootstrap from a trusted root baked in at compile time.
-    pub fn new(
-        root_bytes: &[u8],
-        transport: T,
-        clock: C,
-        encoding: E,
-    ) -> Result<Self> {
+    pub fn new(root_bytes: &[u8], transport: T, clock: C, encoding: E) -> Result<Self> {
         let signed: Signed<Root> = encoding.decode(root_bytes)?;
         let unverified = Unverified::from_signed(signed);
 

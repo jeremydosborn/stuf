@@ -11,9 +11,9 @@ extern crate alloc;
 
 // ── Trait definitions (always available) ────────────────────────────────────
 
-pub mod transport;
 pub mod clock;
 pub mod storage;
+pub mod transport;
 
 // ── Crypto implementations (feature-gated) ─────────────────────────────────
 

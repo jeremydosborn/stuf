@@ -176,7 +176,6 @@ fn make_firmware() -> Vec<u8> {
     firmware
 }
 
-
 // ── Expiry helpers ─────────────────────────────────────────────────────────
 
 fn expires_in_days(days: u64) -> u64 {
