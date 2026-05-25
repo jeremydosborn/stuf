@@ -62,7 +62,7 @@ jobs:
         run: cargo test -p stuf-encoding
 
       - name: Test — stuf-tuf
-        run: cargo test -p stuf-tuf
+        run: cargo test -p stuf-tuf --features "crypto-ed25519 hash-sha256"
 
       - name: Test — stuf-env
         run: cargo test -p stuf-env
