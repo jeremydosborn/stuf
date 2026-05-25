@@ -1,10 +1,9 @@
 mod common;
 
 use common::*;
-use stuf_env::crypto::Ed25519Verifier;
 use stuf_tuf::error::Error;
 use stuf_tuf::verify::chain::TrustAnchor;
-use stuf_tuf::verify::state::FixedClock;
+use stuf_env::clock::FixedClock;
 
 fn build_chain(firmware_in_targets: &[u8], firmware_served: &[u8]) -> (Vec<u8>, MockTransport) {
     let rk = TestKey::generate();
@@ -32,7 +31,6 @@ fn correct_hash_passes() {
     let (root_bytes, transport) = build_chain(FIRMWARE, FIRMWARE);
     let anchor = TrustAnchor::new(
         &root_bytes,
-        Ed25519Verifier,
         transport,
         FixedClock(NOW),
         TufEncoding,
@@ -55,7 +53,6 @@ fn tampered_firmware_hash_rejected() {
     let (root_bytes, transport) = build_chain(FIRMWARE, tampered);
     let anchor = TrustAnchor::new(
         &root_bytes,
-        Ed25519Verifier,
         transport,
         FixedClock(NOW),
         TufEncoding,
@@ -78,7 +75,6 @@ fn length_mismatch_rejected() {
     let (root_bytes, transport) = build_chain(FIRMWARE, longer);
     let anchor = TrustAnchor::new(
         &root_bytes,
-        Ed25519Verifier,
         transport,
         FixedClock(NOW),
         TufEncoding,
@@ -100,7 +96,6 @@ fn unknown_target_rejected() {
     let (root_bytes, transport) = build_chain(FIRMWARE, FIRMWARE);
     let anchor = TrustAnchor::new(
         &root_bytes,
-        Ed25519Verifier,
         transport,
         FixedClock(NOW),
         TufEncoding,

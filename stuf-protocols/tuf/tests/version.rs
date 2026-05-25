@@ -1,10 +1,9 @@
 mod common;
 
 use common::*;
-use stuf_env::crypto::Ed25519Verifier;
 use stuf_tuf::error::Error;
 use stuf_tuf::verify::chain::TrustAnchor;
-use stuf_tuf::verify::state::FixedClock;
+use stuf_env::clock::FixedClock;
 
 fn build_transport(
     root_key: &TestKey,
@@ -51,7 +50,6 @@ fn snapshot_rollback_rejected() {
 
     let anchor = TrustAnchor::new(
         &root_bytes,
-        Ed25519Verifier,
         transport,
         FixedClock(NOW),
         TufEncoding,
@@ -79,7 +77,6 @@ fn targets_rollback_rejected() {
 
     let anchor = TrustAnchor::new(
         &root_bytes,
-        Ed25519Verifier,
         transport,
         FixedClock(NOW),
         TufEncoding,
@@ -111,7 +108,6 @@ fn equal_version_accepted() {
 
     let anchor = TrustAnchor::new(
         &root_bytes,
-        Ed25519Verifier,
         transport,
         FixedClock(NOW),
         TufEncoding,

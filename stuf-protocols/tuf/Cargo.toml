@@ -8,7 +8,7 @@ license = "Apache-2.0 OR MIT"
 [features]
 default = ["std", "canonical-jcs"]
 std = ["alloc", "serde/std"]
-alloc = ["serde/alloc", "hex/alloc"]
+alloc = ["serde/alloc", "hex/alloc", "stuf-env/alloc"]
 client = []
 publisher = []
 full = ["client", "publisher"]
@@ -19,18 +19,22 @@ platform-cloud = ["std", "full"]
 # Canonical JSON — pick one. JCS is default.
 canonical-jcs = []
 
+# Crypto — forwarded to stuf-env
+crypto-ed25519 = ["stuf-env/crypto-ed25519"]
+hash-sha256 = ["stuf-env/hash-sha256"]
+
 [dependencies]
 serde = { version = "=1.0.219", default-features = false, features = ["derive"] }
 hex = { version = "0.4", default-features = false }
 stuf-core = { path = "../../stuf-core" }
 stuf-encoding = { path = "../../stuf-encoding", default-features = false, features = ["alloc"] }
+stuf-env = { path = "../../stuf-env", default-features = false }
 serde_json = { version = "1.0", default-features = false, features = ["alloc"] }
 
 [dev-dependencies]
-stuf-env = { path = "../../stuf-env", features = ["crypto-ed25519"] }
+stuf-env = { path = "../../stuf-env", features = ["crypto-ed25519", "hash-sha256", "transport-mock", "clock-fixed"] }
 stuf-encoding = { path = "../../stuf-encoding" }
 ed25519-dalek = { version = "2.0", features = ["rand_core"] }
 rand = { version = "0.8" }
-sha2 = { version = "0.10" }
 hex = { version = "0.4" }
 serde_json = { version = "1.0" }

@@ -1,10 +1,9 @@
 mod common;
 
 use common::*;
-use stuf_env::crypto::Ed25519Verifier;
 use stuf_tuf::error::Error;
 use stuf_tuf::verify::chain::TrustAnchor;
-use stuf_tuf::verify::state::FixedClock;
+use stuf_env::clock::FixedClock;
 
 fn build_full_chain() -> (Vec<u8>, MockTransport) {
     let rk = TestKey::generate();
@@ -32,7 +31,6 @@ fn full_chain_succeeds() {
     let (root_bytes, transport) = build_full_chain();
     let anchor = TrustAnchor::new(
         &root_bytes,
-        Ed25519Verifier,
         transport,
         FixedClock(NOW),
         TufEncoding,
@@ -56,7 +54,6 @@ fn tampered_root_rejected() {
     root_bytes[mid] ^= 0xff;
     assert!(TrustAnchor::new(
         &root_bytes,
-        Ed25519Verifier,
         transport,
         FixedClock(NOW),
         TufEncoding
@@ -80,7 +77,6 @@ fn wrong_key_for_timestamp_rejected() {
 
     let anchor = TrustAnchor::new(
         &root_bytes,
-        Ed25519Verifier,
         transport,
         FixedClock(NOW),
         TufEncoding,
@@ -104,7 +100,6 @@ fn expired_timestamp_rejected() {
 
     let anchor = TrustAnchor::new(
         &root_bytes,
-        Ed25519Verifier,
         transport,
         FixedClock(NOW),
         TufEncoding,
@@ -131,7 +126,6 @@ fn expired_snapshot_rejected() {
 
     let anchor = TrustAnchor::new(
         &root_bytes,
-        Ed25519Verifier,
         transport,
         FixedClock(NOW),
         TufEncoding,
@@ -163,7 +157,6 @@ fn expired_targets_rejected() {
 
     let anchor = TrustAnchor::new(
         &root_bytes,
-        Ed25519Verifier,
         transport,
         FixedClock(NOW),
         TufEncoding,
@@ -193,7 +186,6 @@ fn transport_error_propagated() {
 
     let anchor = TrustAnchor::new(
         &root_bytes,
-        Ed25519Verifier,
         transport,
         FixedClock(NOW),
         TufEncoding,
@@ -221,7 +213,6 @@ fn mix_and_match_metadata_rejected() {
 
     let anchor = TrustAnchor::new(
         &root_bytes_a,
-        Ed25519Verifier,
         transport,
         FixedClock(NOW),
         TufEncoding,

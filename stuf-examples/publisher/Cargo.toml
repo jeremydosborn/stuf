@@ -12,7 +12,6 @@ path = "src/main.rs"
 # Crypto
 ed25519-dalek = { version = "2.0", features = ["rand_core"] }
 rand = "0.8"
-sha2 = "0.10"
 
 # Serialization
 serde = { version = "1.0", features = ["derive"] }
@@ -23,3 +22,4 @@ hex = "0.4"
 tiny_http = "0.12"
 stuf-encoding = { path = "../../stuf-encoding" }
 stuf-tuf = { path = "../../stuf-protocols/tuf", features = ["canonical-jcs"] }
+stuf-env = { path = "../../stuf-env", features = ["crypto-ed25519", "hash-sha256"] }

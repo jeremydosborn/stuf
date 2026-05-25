@@ -13,11 +13,11 @@ use cortex_m_rt::entry;
 use cortex_m_semihosting::hprintln;
 use panic_semihosting as _;
 
-use stuf_env::crypto::Ed25519Verifier;
+
 use stuf_tuf::encoding::TufEncoding;
-use stuf_tuf::env::transport::Transport;
+use stuf_env::transport::Transport;
 use stuf_tuf::verify::chain::TrustAnchor;
-use stuf_tuf::verify::state::FixedClock;
+use stuf_env::clock::FixedClock;
 
 static ROOT_BYTES: &[u8] = include_bytes!("../factory/root.json");
 
@@ -178,7 +178,6 @@ fn main() -> ! {
 
     let anchor = TrustAnchor::new(
         ROOT_BYTES,
-        Ed25519Verifier,
         SemihostingTransport,
         clock,
         TufEncoding,

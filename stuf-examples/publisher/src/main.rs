@@ -8,9 +8,10 @@
 use ed25519_dalek::{Signer, SigningKey};
 use rand::rngs::OsRng;
 use serde::{Deserialize, Serialize};
-use sha2::{Digest, Sha256};
+
 use std::collections::BTreeMap;
 use stuf_encoding::Canonicalize;
+use stuf_env::crypto::sha256_hex;
 use stuf_tuf::encoding::TufEncoding;
 
 // ── TUF metadata types (minimal, for signing) ─────────────────────────────
@@ -122,9 +123,7 @@ impl KeyPair {
         let public_bytes = signing_key.verifying_key().to_bytes();
         let public_hex = hex::encode(public_bytes);
         // Key ID is SHA256 of the public key bytes
-        let mut hasher = Sha256::new();
-        hasher.update(public_bytes);
-        let key_id = hex::encode(hasher.finalize());
+        let key_id = sha256_hex(&public_bytes);
         Self {
             signing_key,
             key_id,
@@ -177,11 +176,6 @@ fn make_firmware() -> Vec<u8> {
     firmware
 }
 
-fn sha256_hex(data: &[u8]) -> String {
-    let mut hasher = Sha256::new();
-    hasher.update(data);
-    hex::encode(hasher.finalize())
-}
 
 // ── Expiry helpers ─────────────────────────────────────────────────────────
 

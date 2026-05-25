@@ -6,7 +6,7 @@ use std::collections::BTreeMap;
 
 use ed25519_dalek::{Signer, SigningKey};
 use rand::rngs::OsRng;
-use sha2::{Digest, Sha256};
+use stuf_env::crypto::sha256_hex;
 
 use stuf_tuf::schema::{
     keys::{KeyId, KeyType, KeyValue, PublicKey, SignatureScheme},
@@ -32,9 +32,7 @@ impl TestKey {
         let public_bytes = signing_key.verifying_key().to_bytes();
         let public_hex = hex::encode(public_bytes);
 
-        let mut hasher = Sha256::new();
-        hasher.update(&public_bytes);
-        let key_id = KeyId(hex::encode(hasher.finalize()));
+        let key_id = KeyId(sha256_hex(&public_bytes));
 
         let public_key = PublicKey {
             keytype: KeyType::Ed25519,
@@ -192,7 +190,7 @@ pub fn make_snapshot(targets_version: u32, expires: u64, version: u32) -> Snapsh
 }
 
 pub fn make_targets(firmware: &[u8], expires: u64, version: u32) -> Targets {
-    let hash = hex::encode(Sha256::digest(firmware));
+    let hash = sha256_hex(firmware);
     let mut targets_map = BTreeMap::new();
     targets_map.insert(
         "firmware.bin".to_string(),
@@ -241,7 +239,7 @@ impl MockTransport {
     }
 }
 
-impl stuf_tuf::env::transport::Transport for MockTransport {
+impl stuf_env::transport::Transport for MockTransport {
     type Buffer = Vec<u8>;
     type Error = ();
 
@@ -250,9 +248,7 @@ impl stuf_tuf::env::transport::Transport for MockTransport {
     }
 }
 
-// ── JsonEncoding ──────────────────────────────────────────────────────────────
-// Replaced by TufEncoding from stuf-tuf. Tests use it directly.
+// ── Encoding ──────────────────────────────────────────────────────────────────
 
 use stuf_encoding::Canonicalize;
 pub use stuf_tuf::encoding::TufEncoding;
-pub type JsonEncoding = TufEncoding;

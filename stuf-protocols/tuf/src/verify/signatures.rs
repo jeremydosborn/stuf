@@ -1,4 +1,8 @@
 //! Signature verification helper.
+//!
+//! Calls stuf-env crypto functions directly. The protocol logic here
+//! handles TUF-specific concerns: key type dispatch, threshold counting,
+//! role key matching. The actual crypto is in stuf-env.
 
 use alloc::collections::{BTreeMap, BTreeSet};
 use alloc::vec::Vec;
@@ -6,11 +10,10 @@ use alloc::vec::Vec;
 use crate::{
     error::{Error, Result},
     schema::{
-        keys::{KeyId, PublicKey},
+        keys::{KeyId, KeyType, PublicKey},
         role::RoleKeys,
         signed::Signature,
     },
-    sign::traits::Verifier,
 };
 
 pub fn verify_signatures(
@@ -18,7 +21,6 @@ pub fn verify_signatures(
     role_keys: &RoleKeys,
     available_keys: &BTreeMap<KeyId, PublicKey>,
     canonical: &[u8],
-    verifier: &dyn Verifier,
 ) -> Result<()> {
     let mut valid = 0u32;
     let mut counted: BTreeSet<KeyId> = BTreeSet::new();
@@ -35,7 +37,7 @@ pub fn verify_signatures(
                 Ok(b) => b,
                 Err(_) => continue,
             };
-            if verifier.verify(pubkey, canonical, &sig_bytes).is_ok() {
+            if verify_single(pubkey, canonical, &sig_bytes) {
                 valid += 1;
                 counted.insert(sig.keyid.clone());
             }
@@ -49,5 +51,30 @@ pub fn verify_signatures(
             threshold: role_keys.threshold,
             valid,
         })
+    }
+}
+
+/// Dispatch to the right stuf-env crypto function based on key type.
+/// This is where TUF key types meet raw crypto primitives.
+fn verify_single(key: &PublicKey, message: &[u8], signature: &[u8]) -> bool {
+    match key.keytype {
+        #[cfg(feature = "crypto-ed25519")]
+        KeyType::Ed25519 => {
+            let key_bytes = match hex::decode(&key.keyval.public) {
+                Ok(b) => b,
+                Err(_) => return false,
+            };
+            let key_array: [u8; 32] = match key_bytes.try_into() {
+                Ok(a) => a,
+                Err(_) => return false,
+            };
+            let sig_array: [u8; 64] = match signature.try_into() {
+                Ok(a) => a,
+                Err(_) => return false,
+            };
+            stuf_env::crypto::ed25519_verify(&key_array, message, &sig_array).is_ok()
+        }
+        #[allow(unreachable_patterns)]
+        _ => false,
     }
 }
