@@ -35,7 +35,7 @@ use crate::{
     },
     verify::{
         expiry::check_expiry,
-        hash::verify_target_hashes,
+        hash::{verify_metadata_hash, verify_metadata_length, verify_target_hashes},
         signatures::verify_signatures,
         state::{Checked, Unverified},
     },
@@ -206,6 +206,12 @@ where
             .snapshot_meta()
             .ok_or(Error::SnapshotMismatch)?;
 
+        // Verify snapshot bytes against timestamp's declared hash+length
+        if let Some(ref hashes) = snap_meta.hashes {
+            verify_metadata_hash(bytes, hashes)?;
+        }
+        verify_metadata_length(bytes, snap_meta.length)?;
+
         let signed: Signed<Snapshot> = self.encoding.decode(bytes)?;
         let unverified = Unverified::from_signed(signed);
 
@@ -273,6 +279,12 @@ where
             .meta_for("targets.json")
             .ok_or(Error::SnapshotMismatch)?;
 
+        // Verify targets bytes against snapshot's declared hash+length
+        if let Some(ref hashes) = snap_meta.hashes {
+            verify_metadata_hash(bytes, hashes)?;
+        }
+        verify_metadata_length(bytes, snap_meta.length)?;
+
         let signed: Signed<Targets> = self.encoding.decode(bytes)?;
         let unverified = Unverified::from_signed(signed);
 
@@ -323,11 +335,7 @@ where
     /// Step 4 — fetch firmware via Transport and verify against targets metadata.
     /// Returns core's Verified<Target> — the one true trust type.
     pub fn verify_target(&self, name: &str) -> Result<Verified<Target>> {
-        self.targets
-            .get()
-            .get_target(name)
-            .ok_or(Error::TargetNotFound)?;
-
+        self.targets.get().get_target(name).ok_or(Error::TargetNotFound)?;
         let bytes = self.transport.fetch(name).map_err(|_| Error::Transport)?;
         self.verify_target_inner(name, bytes.as_ref())
     }

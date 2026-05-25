@@ -1,8 +1,4 @@
 //! Signature verification helper.
-//!
-//! Calls stuf-env crypto functions directly. The protocol logic here
-//! handles TUF-specific concerns: key type dispatch, threshold counting,
-//! role key matching. The actual crypto is in stuf-env.
 
 use alloc::collections::{BTreeMap, BTreeSet};
 use alloc::vec::Vec;
@@ -10,14 +6,11 @@ use alloc::vec::Vec;
 use crate::{
     error::{Error, Result},
     schema::{
-        keys::{KeyId, PublicKey},
+        keys::{KeyId, KeyType, PublicKey, SignatureScheme},
         role::RoleKeys,
         signed::Signature,
     },
 };
-
-#[cfg(feature = "crypto-ed25519")]
-use crate::schema::keys::KeyType;
 
 pub fn verify_signatures(
     sigs: &[Signature],
@@ -32,15 +25,18 @@ pub fn verify_signatures(
         if !role_keys.keyids.contains(&sig.keyid) {
             continue;
         }
+
         if counted.contains(&sig.keyid) {
             continue;
         }
+
         if let Some(pubkey) = available_keys.get(&sig.keyid) {
             let sig_bytes: Vec<u8> = match hex::decode(&sig.sig) {
                 Ok(b) => b,
                 Err(_) => continue,
             };
-            if verify_single(pubkey, canonical, &sig_bytes) {
+
+            if verify_single(pubkey, canonical, &sig_bytes).is_ok() {
                 valid += 1;
                 counted.insert(sig.keyid.clone());
             }
@@ -57,31 +53,30 @@ pub fn verify_signatures(
     }
 }
 
-/// Dispatch to the right stuf-env crypto function based on key type.
-/// This is where TUF key types meet raw crypto primitives.
-fn verify_single(
-    key: &PublicKey,
-    #[cfg_attr(not(feature = "crypto-ed25519"), allow(unused_variables))] message: &[u8],
-    #[cfg_attr(not(feature = "crypto-ed25519"), allow(unused_variables))] signature: &[u8],
-) -> bool {
-    match key.keytype {
+/// Verify a single signature, checking keytype and scheme match.
+/// Returns Ok(()) on success, Err on failure or unsupported type.
+fn verify_single(key: &PublicKey, message: &[u8], signature: &[u8]) -> Result<()> {
+    // Check keytype and scheme match before attempting crypto
+    match (&key.keytype, &key.scheme) {
         #[cfg(feature = "crypto-ed25519")]
-        KeyType::Ed25519 => {
-            let key_bytes = match hex::decode(&key.keyval.public) {
-                Ok(b) => b,
-                Err(_) => return false,
-            };
-            let key_array: [u8; 32] = match key_bytes.try_into() {
-                Ok(a) => a,
-                Err(_) => return false,
-            };
-            let sig_array: [u8; 64] = match signature.try_into() {
-                Ok(a) => a,
-                Err(_) => return false,
-            };
-            stuf_env::crypto::ed25519_verify(&key_array, message, &sig_array).is_ok()
+        (KeyType::Ed25519, SignatureScheme::Ed25519) => {
+            let pub_bytes: [u8; 32] = hex::decode(&key.keyval.public)
+                .map_err(|_| Error::UnsupportedKeyType)?
+                .try_into()
+                .map_err(|_| Error::UnsupportedKeyType)?;
+
+            let sig_bytes: [u8; 64] = signature
+                .try_into()
+                .map_err(|_| Error::UnsupportedKeyType)?;
+
+            stuf_env::crypto::ed25519_verify(&pub_bytes, message, &sig_bytes)
+                .map_err(|_| Error::NoValidSignatures)
         }
-        #[allow(unreachable_patterns)]
-        _ => false,
+
+        // Mismatched keytype/scheme (e.g. Ed25519 key with RSA scheme)
+        (KeyType::Ed25519, _) | (_, SignatureScheme::Ed25519) => Err(Error::UnsupportedKeyType),
+
+        // Unsupported key types — fail explicitly
+        _ => Err(Error::UnsupportedKeyType),
     }
 }
