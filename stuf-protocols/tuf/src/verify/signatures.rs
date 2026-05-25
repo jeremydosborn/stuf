@@ -10,7 +10,7 @@ use alloc::vec::Vec;
 use crate::{
     error::{Error, Result},
     schema::{
-        keys::{KeyId, KeyType, PublicKey},
+        keys::{KeyId, PublicKey},
         role::RoleKeys,
         signed::Signature,
     },
@@ -56,7 +56,11 @@ pub fn verify_signatures(
 
 /// Dispatch to the right stuf-env crypto function based on key type.
 /// This is where TUF key types meet raw crypto primitives.
-fn verify_single(key: &PublicKey, message: &[u8], signature: &[u8]) -> bool {
+fn verify_single(
+    key: &PublicKey,
+    #[cfg_attr(not(feature = "crypto-ed25519"), allow(unused_variables))] message: &[u8],
+    #[cfg_attr(not(feature = "crypto-ed25519"), allow(unused_variables))] signature: &[u8],
+) -> bool {
     match key.keytype {
         #[cfg(feature = "crypto-ed25519")]
         KeyType::Ed25519 => {
