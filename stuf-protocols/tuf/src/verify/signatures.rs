@@ -55,6 +55,7 @@ pub fn verify_signatures(
 
 /// Verify a single signature, checking keytype and scheme match.
 /// Returns Ok(()) on success, Err on failure or unsupported type.
+#[allow(unused_variables)]
 fn verify_single(key: &PublicKey, message: &[u8], signature: &[u8]) -> Result<()> {
     // Check keytype and scheme match before attempting crypto
     match (&key.keytype, &key.scheme) {
