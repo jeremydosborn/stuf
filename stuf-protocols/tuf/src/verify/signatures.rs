@@ -16,6 +16,9 @@ use crate::{
     },
 };
 
+#[cfg(feature = "crypto-ed25519")]
+use crate::schema::keys::KeyType;
+
 pub fn verify_signatures(
     sigs: &[Signature],
     role_keys: &RoleKeys,

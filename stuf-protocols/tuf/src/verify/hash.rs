@@ -3,6 +3,10 @@
 //! This module owns the comparison logic (what to hash, what to
 //! compare against). The actual hash computation is in stuf-env.
 
+#[cfg(feature = "hash-sha256")]
+#[cfg(feature = "hash-sha256")]
+#[cfg(feature = "hash-sha256")]
+use crate::error::Error;
 use crate::{error::Result, schema::targets::Hashes};
 
 /// Verify target bytes against expected hashes from targets metadata.
