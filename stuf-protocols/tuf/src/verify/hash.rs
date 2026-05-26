@@ -10,11 +10,14 @@
 use crate::{error::Result, schema::targets::Hashes};
 
 /// Expected hex string lengths for supported hash algorithms.
+#[allow(dead_code)]
 const SHA256_HEX_LEN: usize = 64;
+#[allow(dead_code)]
 const SHA512_HEX_LEN: usize = 128;
 
 /// Validate that a hex hash string has the correct length for its algorithm
 /// and contains only valid hex characters.
+#[allow(dead_code)]
 fn validate_hex_hash(hex_str: &str, expected_len: usize) -> Result<()> {
     use crate::error::Error;
 
