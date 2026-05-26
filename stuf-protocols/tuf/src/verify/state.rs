@@ -62,22 +62,3 @@ impl<T> Checked<T> {
         self.0
     }
 }
-
-/// Clock abstraction — injected by the app, never owned by stuf-tuf.
-///
-/// Returns current time as unix timestamp (seconds since epoch).
-/// No chrono dependency. The app decides how to read time —
-/// hardware timer, RTOS tick, system clock, or fixed value for testing.
-pub trait Clock {
-    fn now_secs(&self) -> u64;
-}
-
-/// Fixed clock for testing — always returns the same instant.
-#[derive(Debug, Clone)]
-pub struct FixedClock(pub u64);
-
-impl Clock for FixedClock {
-    fn now_secs(&self) -> u64 {
-        self.0
-    }
-}

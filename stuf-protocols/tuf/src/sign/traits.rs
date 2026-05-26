@@ -1,22 +1,15 @@
 //! Signing trait boundaries.
 //!
-//! Verifier and Signer are defined here — implemented in stuf-env.
-//! stuf-tuf never owns crypto primitives directly.
+//! Signature verification is handled by calling stuf-env crypto
+//! functions directly — no Verifier trait. The protocol logic in
+//! verify/signatures.rs extracts key bytes from TUF's PublicKey
+//! and dispatches to the right stuf-env function.
+//!
+//! Signer is still a trait because the publisher side needs it.
 
 use crate::schema::keys::PublicKey;
-use crate::schema::targets::Hashes;
-
-/// Signature verification — implemented by stuf-env crypto modules.
-pub trait Verifier {
-    fn verify(&self, key: &PublicKey, message: &[u8], signature: &[u8]) -> Result<(), VerifyError>;
-
-    /// Verify target bytes against expected hashes.
-    /// stuf-env owns the actual hash computation.
-    fn verify_hash(&self, bytes: &[u8], hashes: &Hashes) -> Result<(), VerifyError>;
-}
 
 /// Signing — used by the publisher side (build/).
-/// MVP: stubbed. Implemented in stuf-env.
 pub trait Signer {
     fn key_id(&self) -> &crate::schema::keys::KeyId;
     fn public_key(&self) -> &PublicKey;

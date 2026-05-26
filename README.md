@@ -1,56 +1,47 @@
 # stuf
 
-A protocol-agnostic supply chain security framework for Rust, designed to run anywhere.
-
-## Overview
-
-stuf provides a minimal trust kernel as the foundation for all protocols.
-Developers declare a target environment and receive a correct, minimal binary.
-Targets range from bare-metal microcontrollers to cloud services.
-The compiler assembles only required components.
+Supply chain security for Rust, designed for targets from bare-metal to cloud.
 
 ## Architecture
 
+```text
+stuf-core              # trust kernel: Verified<T>, Verifier<T>, no_std
+stuf-encoding          # canonical serialization and decoding traits
+stuf-env               # crypto, transport, storage, and clock bindings
+stuf-protocols/tuf     # TUF verification and publishing logic
+stuf-examples          # publisher and embedded toaster demos
+````
+
+## How it works
+
+Applications compose verification profiles using stuf's primitives:
+
+`stuf-core` defines the verification trait and the `Verified<T>` trust type, giving all protocols uniform type-level enforcement for verified data.
+
+`stuf-encoding` owns canonical serialization and decoding. The TUF implementation uses RFC 8785 / JCS canonical JSON for signed metadata.
+
+`stuf-env` provides pluggable platform bindings for crypto, transport, storage, and clocks.
+
+`stuf-protocols/tuf` implements the first protocol profile.
+
+## Embedded
+
+`stuf` supports `no_std + alloc` and includes a no-heap TUF verifier profile for constrained targets.
+
+## Examples
+
+The workspace includes:
+
+```text
+publisher             # generates signed TUF demo metadata and target files
+toaster               # ARM Cortex-M demo using the small-heap verifier profile
+toaster-no-heap       # ARM Cortex-M demo using the no-heap verifier profile
 ```
-stuf-core        # no_std trust kernel: Unverified<T> → Verified<T>, zero dependencies
-stuf-encoding    # deterministic signing inputs: canonical JSON, PAE, etc.
-stuf-env         # pluggable runtime: crypto, transport, storage, clock
-stuf-protocols   # TUF, Uptane, in-toto, sigstore, notation
-stuf-examples    # embedded, RTOS, cloud examples
-```
-
-## Embedded Profile
-
-stuf is currently designed as `no_std + alloc`: it avoids the Rust standard library and operating-system runtime assumptions, while using a small heap for practical matters.
-
-This makes stuf suitable for embedded targets with an allocator today, while leaving a path to a future strict no-alloc profile using borrowed data structures, fixed-capacity buffers, streaming verification, and heapless protocol implementations.
-
-## Encoding
-
-stuf-encoding defines traits for canonical serialization and decoding.
-Protocol crates implement these traits with their chosen format.
-
-stuf-tuf currently implements RFC 8785 (JSON Canonicalization Scheme) for
-signature verification, with an OLPC canonical JSON stub for legacy TUF
-interop. Implementations live in `stuf-protocols/tuf/src/encoding/` behind
-compile-time feature flags (`canonical-jcs` is the default).
-
-The JCS canonicalizer uses `serde_json::Value` for tree walking, which
-increased heap usage from 8KB to 16KB on the toaster demo. Optimizing this
-with a streaming canonicalizer is planned for a future change.
-
-A strict no-heap encoding path is planned.
-
-## Design Principles
-
-* Zero dependencies and no environment assumptions in the core
-* Protocols treated as first-class, each with distinct trust models
-* Compiler-enforced trust boundaries preventing unverified data from reaching verified contexts
 
 ## Status
 
-Early stage. Core trust kernel complete. TUF protocol v.02 implemented; integration and spec alignment in progress.
+Early. Core architecture is in place. The first TUF profile is implemented. The embedded no-heap verifier profile is working and covered by CI.
 
 ## License
 
-Apache 2.0
+Apache-2.0
