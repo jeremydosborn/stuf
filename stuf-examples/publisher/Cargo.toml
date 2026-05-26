@@ -23,4 +23,4 @@ tiny_http = "0.12"
 
 # stuf
 stuf-encoding = { path = "../../stuf-encoding" }
-stuf-env = { path = "../../stuf-env", features = ["crypto-ed25519", "hash-sha256"] }
+stuf-env = { path = "../../stuf-env", default-features = false, features = ["alloc", "crypto-ed25519", "hash-sha256"] }
