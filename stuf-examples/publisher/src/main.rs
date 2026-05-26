@@ -11,8 +11,8 @@ use serde::{Deserialize, Serialize};
 
 use std::collections::BTreeMap;
 use stuf_encoding::Canonicalize;
+use stuf_encoding::JcsJsonEncoding;
 use stuf_env::crypto::sha256_hex;
-use stuf_tuf::encoding::TufEncoding;
 
 // ── TUF metadata types (minimal, for signing) ─────────────────────────────
 
@@ -152,7 +152,7 @@ fn sign_metadata<T: Serialize + serde::de::DeserializeOwned>(
     keypair: &KeyPair,
 ) -> Signed<T> {
     // Serialize the signed portion to canonical JSON
-    let canonical = TufEncoding.canonicalize(payload).expect("canonicalize");
+    let canonical = JcsJsonEncoding.canonicalize(payload).expect("canonicalize");
     let sig_hex = keypair.sign(&canonical);
     Signed {
         signed: serde_json::from_slice(&canonical).expect("round-trip"),

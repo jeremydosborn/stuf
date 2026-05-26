@@ -1,4 +1,9 @@
-use stuf_encoding::{Decode, EncodeError};
+//! JSON decoder using serde_json.
+//!
+//! Not TUF-specific — any protocol that uses JSON metadata
+//! can use this decoder.
+
+use crate::{Decode, EncodeError};
 
 #[derive(Debug, Clone, Copy)]
 pub struct JsonDecoder;

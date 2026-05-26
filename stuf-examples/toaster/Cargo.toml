@@ -10,11 +10,11 @@ path = "src/main.rs"
 
 [dependencies]
 serde = { version = "=1.0.219", default-features = false }
-stuf-tuf  = { path = "../../stuf-protocols/tuf", default-features = false, features = ["platform-bare-metal", "canonical-jcs", "crypto-ed25519", "hash-sha256"] }
+stuf-tuf  = { path = "../../stuf-protocols/tuf", default-features = false, features = ["platform-bare-metal", "crypto-ed25519", "hash-sha256"] }
 stuf-env  = { path = "../../stuf-env", default-features = false, features = ["alloc", "crypto-ed25519", "hash-sha256", "clock-fixed"] }
+stuf-encoding = { path = "../../stuf-encoding", default-features = false, features = ["alloc", "jcs"] }
 cortex-m = { version = "0.7", features = ["critical-section-single-core"] }
 cortex-m-rt = { version = "0.7" }
 cortex-m-semihosting = { version = "0.5" }
 panic-semihosting    = { version = "0.5" }
 embedded-alloc = "0.6"
-

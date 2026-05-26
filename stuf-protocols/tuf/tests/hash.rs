@@ -29,7 +29,8 @@ fn build_chain(firmware_in_targets: &[u8], firmware_served: &[u8]) -> (Vec<u8>, 
 #[test]
 fn correct_hash_passes() {
     let (root_bytes, transport) = build_chain(FIRMWARE, FIRMWARE);
-    let anchor = TrustAnchor::new(&root_bytes, transport, FixedClock(NOW), TufEncoding).unwrap();
+    let anchor =
+        TrustAnchor::new(&root_bytes, transport, FixedClock(NOW), JcsJsonEncoding).unwrap();
     let result = anchor
         .verify_timestamp()
         .unwrap()
@@ -45,7 +46,8 @@ fn correct_hash_passes() {
 fn tampered_firmware_hash_rejected() {
     let tampered = b"TAMPERED_FIRMWARE_EVIL_EVIL_EVIL";
     let (root_bytes, transport) = build_chain(FIRMWARE, tampered);
-    let anchor = TrustAnchor::new(&root_bytes, transport, FixedClock(NOW), TufEncoding).unwrap();
+    let anchor =
+        TrustAnchor::new(&root_bytes, transport, FixedClock(NOW), JcsJsonEncoding).unwrap();
     let result = anchor
         .verify_timestamp()
         .unwrap()
@@ -61,7 +63,8 @@ fn tampered_firmware_hash_rejected() {
 fn length_mismatch_rejected() {
     let longer = b"FIRMWARE_V1.1.0_GOLDEN_BROWN_PLUS_EXTRA_BYTES_APPENDED";
     let (root_bytes, transport) = build_chain(FIRMWARE, longer);
-    let anchor = TrustAnchor::new(&root_bytes, transport, FixedClock(NOW), TufEncoding).unwrap();
+    let anchor =
+        TrustAnchor::new(&root_bytes, transport, FixedClock(NOW), JcsJsonEncoding).unwrap();
     let result = anchor
         .verify_timestamp()
         .unwrap()
@@ -76,7 +79,8 @@ fn length_mismatch_rejected() {
 #[test]
 fn unknown_target_rejected() {
     let (root_bytes, transport) = build_chain(FIRMWARE, FIRMWARE);
-    let anchor = TrustAnchor::new(&root_bytes, transport, FixedClock(NOW), TufEncoding).unwrap();
+    let anchor =
+        TrustAnchor::new(&root_bytes, transport, FixedClock(NOW), JcsJsonEncoding).unwrap();
     let result = anchor
         .verify_timestamp()
         .unwrap()

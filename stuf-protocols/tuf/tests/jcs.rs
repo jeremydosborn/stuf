@@ -2,7 +2,7 @@ mod common;
 
 use serde::Serialize;
 use stuf_encoding::Canonicalize;
-use stuf_tuf::encoding::TufEncoding;
+use stuf_encoding::JcsJsonEncoding;
 
 // ── Key sorting ───────────────────────────────────────────────────────────────
 
@@ -19,7 +19,7 @@ fn keys_sorted_alphabetically() {
         alpha: 1,
         middle: 2,
     };
-    let result = TufEncoding.canonicalize(&data).unwrap();
+    let result = JcsJsonEncoding.canonicalize(&data).unwrap();
     let s = std::str::from_utf8(&result).unwrap();
     assert_eq!(s, r#"{"alpha":1,"middle":2,"zebra":3}"#);
 }
@@ -40,7 +40,7 @@ fn nested_objects_sorted_recursively() {
         z_outer: Inner { z: 2, a: 1 },
         a_outer: 0,
     };
-    let result = TufEncoding.canonicalize(&data).unwrap();
+    let result = JcsJsonEncoding.canonicalize(&data).unwrap();
     let s = std::str::from_utf8(&result).unwrap();
     assert_eq!(s, r#"{"a_outer":0,"z_outer":{"a":1,"z":2}}"#);
 }
@@ -54,7 +54,7 @@ fn underscore_prefix_sorts_before_letters() {
         "expires": 9999,
         "consistent_snapshot": false
     });
-    let result = TufEncoding.canonicalize(&data).unwrap();
+    let result = JcsJsonEncoding.canonicalize(&data).unwrap();
     let s = std::str::from_utf8(&result).unwrap();
     assert!(s.starts_with(r#"{"_type":"root","consistent_snapshot":false"#));
 }
@@ -67,7 +67,7 @@ fn no_whitespace_in_output() {
         "a": [1, 2, 3],
         "b": {"c": true}
     });
-    let result = TufEncoding.canonicalize(&data).unwrap();
+    let result = JcsJsonEncoding.canonicalize(&data).unwrap();
     let s = std::str::from_utf8(&result).unwrap();
     assert!(!s.contains(' '));
     assert!(!s.contains('\n'));
@@ -78,38 +78,52 @@ fn no_whitespace_in_output() {
 
 #[test]
 fn null_bool_integers() {
-    let result = TufEncoding.canonicalize(&serde_json::json!(null)).unwrap();
+    let result = JcsJsonEncoding
+        .canonicalize(&serde_json::json!(null))
+        .unwrap();
     assert_eq!(std::str::from_utf8(&result).unwrap(), "null");
 
-    let result = TufEncoding.canonicalize(&serde_json::json!(true)).unwrap();
+    let result = JcsJsonEncoding
+        .canonicalize(&serde_json::json!(true))
+        .unwrap();
     assert_eq!(std::str::from_utf8(&result).unwrap(), "true");
 
-    let result = TufEncoding.canonicalize(&serde_json::json!(false)).unwrap();
+    let result = JcsJsonEncoding
+        .canonicalize(&serde_json::json!(false))
+        .unwrap();
     assert_eq!(std::str::from_utf8(&result).unwrap(), "false");
 
-    let result = TufEncoding.canonicalize(&serde_json::json!(42)).unwrap();
+    let result = JcsJsonEncoding
+        .canonicalize(&serde_json::json!(42))
+        .unwrap();
     assert_eq!(std::str::from_utf8(&result).unwrap(), "42");
 
-    let result = TufEncoding.canonicalize(&serde_json::json!(0)).unwrap();
+    let result = JcsJsonEncoding.canonicalize(&serde_json::json!(0)).unwrap();
     assert_eq!(std::str::from_utf8(&result).unwrap(), "0");
 
-    let result = TufEncoding.canonicalize(&serde_json::json!(-1)).unwrap();
+    let result = JcsJsonEncoding
+        .canonicalize(&serde_json::json!(-1))
+        .unwrap();
     assert_eq!(std::str::from_utf8(&result).unwrap(), "-1");
 }
 
 #[test]
 fn arrays_preserve_order() {
     let data = serde_json::json!([3, 1, 2]);
-    let result = TufEncoding.canonicalize(&data).unwrap();
+    let result = JcsJsonEncoding.canonicalize(&data).unwrap();
     assert_eq!(std::str::from_utf8(&result).unwrap(), "[3,1,2]");
 }
 
 #[test]
 fn empty_object_and_array() {
-    let result = TufEncoding.canonicalize(&serde_json::json!({})).unwrap();
+    let result = JcsJsonEncoding
+        .canonicalize(&serde_json::json!({}))
+        .unwrap();
     assert_eq!(std::str::from_utf8(&result).unwrap(), "{}");
 
-    let result = TufEncoding.canonicalize(&serde_json::json!([])).unwrap();
+    let result = JcsJsonEncoding
+        .canonicalize(&serde_json::json!([]))
+        .unwrap();
     assert_eq!(std::str::from_utf8(&result).unwrap(), "[]");
 }
 
@@ -124,7 +138,7 @@ fn predefined_escapes() {
     let data = Data {
         s: "tab\there\nnewline\rcarriage\\slash\"quote".to_string(),
     };
-    let result = TufEncoding.canonicalize(&data).unwrap();
+    let result = JcsJsonEncoding.canonicalize(&data).unwrap();
     let s = std::str::from_utf8(&result).unwrap();
     assert_eq!(s, r#"{"s":"tab\there\nnewline\rcarriage\\slash\"quote"}"#);
 }
@@ -138,7 +152,7 @@ fn control_chars_hex_escaped() {
     let data = Data {
         s: "\u{0001}\u{001f}".to_string(),
     };
-    let result = TufEncoding.canonicalize(&data).unwrap();
+    let result = JcsJsonEncoding.canonicalize(&data).unwrap();
     let s = std::str::from_utf8(&result).unwrap();
     assert_eq!(s, r#"{"s":"\u0001\u001f"}"#);
 }
@@ -152,7 +166,7 @@ fn backspace_and_formfeed_escaped() {
     let data = Data {
         s: "\u{0008}\u{000C}".to_string(),
     };
-    let result = TufEncoding.canonicalize(&data).unwrap();
+    let result = JcsJsonEncoding.canonicalize(&data).unwrap();
     let s = std::str::from_utf8(&result).unwrap();
     assert_eq!(s, r#"{"s":"\b\f"}"#);
 }
@@ -166,7 +180,7 @@ fn non_ascii_passes_through_literal() {
     let data = Data {
         s: "café".to_string(),
     };
-    let result = TufEncoding.canonicalize(&data).unwrap();
+    let result = JcsJsonEncoding.canonicalize(&data).unwrap();
     let s = std::str::from_utf8(&result).unwrap();
     assert_eq!(s, r#"{"s":"café"}"#);
 }
@@ -180,8 +194,8 @@ fn deterministic_output() {
         "a": 2,
         "m": {"z": true, "a": false}
     });
-    let result1 = TufEncoding.canonicalize(&data).unwrap();
-    let result2 = TufEncoding.canonicalize(&data).unwrap();
+    let result1 = JcsJsonEncoding.canonicalize(&data).unwrap();
+    let result2 = JcsJsonEncoding.canonicalize(&data).unwrap();
     assert_eq!(result1, result2);
 }
 
@@ -195,9 +209,9 @@ fn canonicalize_then_decode_then_canonicalize_is_stable() {
         "expires": 1735689600,
         "meta": {"snapshot.json": {"version": 1}}
     });
-    let canonical1 = TufEncoding.canonicalize(&data).unwrap();
-    let decoded: serde_json::Value = TufEncoding.decode(&canonical1).unwrap();
-    let canonical2 = TufEncoding.canonicalize(&decoded).unwrap();
+    let canonical1 = JcsJsonEncoding.canonicalize(&data).unwrap();
+    let decoded: serde_json::Value = JcsJsonEncoding.decode(&canonical1).unwrap();
+    let canonical2 = JcsJsonEncoding.canonicalize(&decoded).unwrap();
     assert_eq!(canonical1, canonical2);
 }
 
@@ -215,7 +229,7 @@ fn tuf_root_metadata_canonical_form() {
         "keys": {},
         "roles": {}
     });
-    let result = TufEncoding.canonicalize(&data).unwrap();
+    let result = JcsJsonEncoding.canonicalize(&data).unwrap();
     let s = std::str::from_utf8(&result).unwrap();
     // _type sorts first (underscore < letters in UTF-16)
     assert!(s.starts_with(r#"{"_type":"root""#));
@@ -242,11 +256,11 @@ fn publisher_and_client_produce_same_canonical_bytes() {
     let root = make_root(&rk, &tk, &sk, &tsk, FAR_FUTURE, 1);
 
     // Publisher side: canonicalize and sign
-    let publisher_bytes = TufEncoding.canonicalize(&root).unwrap();
+    let publisher_bytes = JcsJsonEncoding.canonicalize(&root).unwrap();
     let sig = rk.sign(&publisher_bytes);
 
     // Client side: canonicalize the same struct
-    let client_bytes = TufEncoding.canonicalize(&root).unwrap();
+    let client_bytes = JcsJsonEncoding.canonicalize(&root).unwrap();
 
     // Must be identical — this is why canonical JSON exists
     assert_eq!(publisher_bytes, client_bytes);

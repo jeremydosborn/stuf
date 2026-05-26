@@ -371,7 +371,6 @@ dependencies = [
  "serde_json",
  "stuf-encoding",
  "stuf-env",
- "stuf-tuf",
  "tiny_http",
 ]
 
@@ -549,6 +548,7 @@ name = "stuf-encoding"
 version = "0.1.0"
 dependencies = [
  "serde",
+ "serde_json",
 ]
 
 [[package]]
@@ -641,6 +641,7 @@ dependencies = [
  "embedded-alloc",
  "panic-semihosting",
  "serde",
+ "stuf-encoding",
  "stuf-env",
  "stuf-tuf",
 ]

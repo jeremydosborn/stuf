@@ -1,9 +1,13 @@
 //! RFC 8785 — JSON Canonicalization Scheme (JCS).
+//!
+//! Not TUF-specific — any protocol that needs deterministic JSON
+//! for signature verification can use this.
 
 use alloc::string::{String, ToString};
 use alloc::vec::Vec;
 use serde_json::Value;
-use stuf_encoding::{Canonicalize, EncodeError};
+
+use crate::heap::canonicalize::{Canonicalize, EncodeError};
 
 #[derive(Debug, Clone, Copy)]
 pub struct Jcs;
