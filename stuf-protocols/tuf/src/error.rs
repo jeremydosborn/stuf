@@ -44,6 +44,18 @@ pub enum Error {
     InvalidHashLength { expected: usize, actual: usize },
     /// Hash hex string contains non-hex characters.
     InvalidHashEncoding,
+    /// Metadata exceeds configured size limit.
+    MetadataTooLarge {
+        role: &'static str,
+        limit: usize,
+        actual: usize,
+    },
+    /// Root metadata contains too many keys.
+    TooManyKeys { limit: usize, actual: usize },
+    /// Metadata contains too many signatures.
+    TooManySignatures { limit: usize, actual: usize },
+    /// Targets metadata contains too many target entries.
+    TooManyTargets { limit: usize, actual: usize },
 }
 
 impl fmt::Display for Error {
@@ -90,6 +102,25 @@ impl fmt::Display for Error {
                 )
             }
             Error::InvalidHashEncoding => write!(f, "hash contains non-hex characters"),
+            Error::MetadataTooLarge {
+                role,
+                limit,
+                actual,
+            } => {
+                write!(
+                    f,
+                    "{role} metadata too large: limit {limit} bytes, got {actual}"
+                )
+            }
+            Error::TooManyKeys { limit, actual } => {
+                write!(f, "too many keys: limit {limit}, got {actual}")
+            }
+            Error::TooManySignatures { limit, actual } => {
+                write!(f, "too many signatures: limit {limit}, got {actual}")
+            }
+            Error::TooManyTargets { limit, actual } => {
+                write!(f, "too many targets: limit {limit}, got {actual}")
+            }
         }
     }
 }

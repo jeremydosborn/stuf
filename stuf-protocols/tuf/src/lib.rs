@@ -12,3 +12,4 @@ pub mod build;
 
 pub use error::{Error, Result};
 pub use verify::chain::TrustAnchor;
+pub use verify::limits::Limits;

@@ -8,6 +8,9 @@
 //! compile time). Encoding is called directly via stuf-encoding functions
 //! (feature-gated at compile time).
 //!
+//! Configurable `Limits` bound the maximum size and complexity of
+//! metadata the verifier will accept, preventing resource exhaustion.
+//!
 //! Internal chain state uses Checked<T> (signature checks passed).
 //! The final output — verify_target / verify_target_bytes — returns
 //! core's Verified<T>, the one true trust type.
@@ -36,10 +39,57 @@ use crate::{
     verify::{
         expiry::check_expiry,
         hash::{verify_metadata_hash, verify_metadata_length, verify_target_hashes},
+        limits::Limits,
         signatures::verify_signatures,
         state::{Checked, Unverified},
     },
 };
+
+// ── Size check helper ─────────────────────────────────────────────────────────
+
+fn check_size(bytes: &[u8], max: usize, role: &'static str) -> Result<()> {
+    if bytes.len() > max {
+        Err(Error::MetadataTooLarge {
+            role,
+            limit: max,
+            actual: bytes.len(),
+        })
+    } else {
+        Ok(())
+    }
+}
+
+// ── Structural limit checks ──────────────────────────────────────────────────
+
+fn check_root_limits(root: &Root, limits: &Limits) -> Result<()> {
+    if root.keys.len() > limits.max_keys {
+        return Err(Error::TooManyKeys {
+            limit: limits.max_keys,
+            actual: root.keys.len(),
+        });
+    }
+    Ok(())
+}
+
+fn check_signature_limits<T>(signed: &Signed<T>, limits: &Limits) -> Result<()> {
+    if signed.signatures.len() > limits.max_signatures {
+        return Err(Error::TooManySignatures {
+            limit: limits.max_signatures,
+            actual: signed.signatures.len(),
+        });
+    }
+    Ok(())
+}
+
+fn check_targets_limits(targets: &Targets, limits: &Limits) -> Result<()> {
+    if targets.targets.len() > limits.max_targets_entries {
+        return Err(Error::TooManyTargets {
+            limit: limits.max_targets_entries,
+            actual: targets.targets.len(),
+        });
+    }
+    Ok(())
+}
 
 // ── Type states ───────────────────────────────────────────────────────────────
 
@@ -52,6 +102,7 @@ where
     pub(crate) root: Checked<Root>,
     pub(crate) transport: T,
     pub(crate) clock: C,
+    pub(crate) limits: Limits,
 }
 
 pub struct TimestampChecked<T, C>
@@ -63,6 +114,7 @@ where
     pub(crate) timestamp: Checked<Timestamp>,
     pub(crate) transport: T,
     pub(crate) clock: C,
+    pub(crate) limits: Limits,
 }
 
 pub struct SnapshotChecked<T, C>
@@ -74,6 +126,7 @@ where
     pub(crate) snapshot: Checked<Snapshot>,
     pub(crate) transport: T,
     pub(crate) clock: C,
+    pub(crate) limits: Limits,
 }
 
 #[allow(dead_code)]
@@ -87,6 +140,7 @@ where
     pub(crate) targets: Checked<Targets>,
     pub(crate) transport: T,
     pub(crate) clock: C,
+    pub(crate) limits: Limits,
 }
 
 // ── TrustAnchor ───────────────────────────────────────────────────────────────
@@ -97,11 +151,23 @@ where
     C: Clock,
 {
     /// Bootstrap from a trusted root baked in at compile time.
+    /// Uses default limits.
     pub fn new(root_bytes: &[u8], transport: T, clock: C) -> Result<Self> {
+        Self::with_limits(root_bytes, transport, clock, Limits::default())
+    }
+
+    /// Bootstrap with custom metadata limits.
+    pub fn with_limits(root_bytes: &[u8], transport: T, clock: C, limits: Limits) -> Result<Self> {
+        check_size(root_bytes, limits.max_root_bytes, "root")?;
+
         let signed: Signed<Root> = stuf_encoding::decode(root_bytes)?;
+        check_signature_limits(&signed, &limits)?;
+
         let unverified = Unverified::from_signed(signed);
 
         let root_inner = unverified.payload().clone();
+        check_root_limits(&root_inner, &limits)?;
+
         let role_keys = root_inner
             .role_keys(&RoleType::Root)
             .ok_or(Error::NoKeysForRole)?;
@@ -119,6 +185,7 @@ where
             root: checked,
             transport,
             clock,
+            limits,
         })
     }
 
@@ -137,7 +204,11 @@ where
     }
 
     fn verify_timestamp_inner(self, bytes: &[u8]) -> Result<TimestampChecked<T, C>> {
+        check_size(bytes, self.limits.max_timestamp_bytes, "timestamp")?;
+
         let signed: Signed<Timestamp> = stuf_encoding::decode(bytes)?;
+        check_signature_limits(&signed, &self.limits)?;
+
         let unverified = Unverified::from_signed(signed);
 
         let role_keys = self
@@ -162,6 +233,7 @@ where
             timestamp: checked,
             transport: self.transport,
             clock: self.clock,
+            limits: self.limits,
         })
     }
 }
@@ -188,6 +260,8 @@ where
     }
 
     fn verify_snapshot_inner(self, bytes: &[u8]) -> Result<SnapshotChecked<T, C>> {
+        check_size(bytes, self.limits.max_snapshot_bytes, "snapshot")?;
+
         let snap_meta = self
             .timestamp
             .get()
@@ -201,6 +275,8 @@ where
         verify_metadata_length(bytes, snap_meta.length)?;
 
         let signed: Signed<Snapshot> = stuf_encoding::decode(bytes)?;
+        check_signature_limits(&signed, &self.limits)?;
+
         let unverified = Unverified::from_signed(signed);
 
         let role_keys = self
@@ -233,6 +309,7 @@ where
             snapshot: checked,
             transport: self.transport,
             clock: self.clock,
+            limits: self.limits,
         })
     }
 }
@@ -259,6 +336,8 @@ where
     }
 
     fn verify_targets_inner(self, bytes: &[u8]) -> Result<TargetsChecked<T, C>> {
+        check_size(bytes, self.limits.max_targets_bytes, "targets")?;
+
         let snap_meta = self
             .snapshot
             .get()
@@ -272,6 +351,8 @@ where
         verify_metadata_length(bytes, snap_meta.length)?;
 
         let signed: Signed<Targets> = stuf_encoding::decode(bytes)?;
+        check_signature_limits(&signed, &self.limits)?;
+
         let unverified = Unverified::from_signed(signed);
 
         let role_keys = self
@@ -290,6 +371,8 @@ where
 
         let checked = unverified.into_checked();
 
+        check_targets_limits(checked.get(), &self.limits)?;
+
         if checked.get().version() != snap_meta.version {
             return Err(Error::VersionMismatch {
                 expected: snap_meta.version,
@@ -305,6 +388,7 @@ where
             targets: checked,
             transport: self.transport,
             clock: self.clock,
+            limits: self.limits,
         })
     }
 }
