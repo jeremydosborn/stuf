@@ -41,8 +41,8 @@ fn read(path: &str) -> Vec<u8> {
 fn no_heap_root_verifies_against_publisher_output() {
     let root = read("stuf-examples/toaster/factory/root.json");
 
-    let _anchor = TrustAnchor::new(&root, NoTransport, FixedClock(NOW))
-        .expect("no-heap root should verify");
+    let _anchor =
+        TrustAnchor::new(&root, NoTransport, FixedClock(NOW)).expect("no-heap root should verify");
 }
 
 #[test]
@@ -53,8 +53,8 @@ fn no_heap_full_chain_verifies_against_publisher_output() {
     let targets = read("stuf-examples/.generated/publisher-repo/targets.json");
     let firmware = read("stuf-examples/.generated/publisher-repo/toaster-firmware-1.1.0.bin");
 
-    let anchor = TrustAnchor::new(&root, NoTransport, FixedClock(NOW))
-        .expect("no-heap root should verify");
+    let anchor =
+        TrustAnchor::new(&root, NoTransport, FixedClock(NOW)).expect("no-heap root should verify");
 
     let timestamp = anchor
         .verify_timestamp_bytes(&timestamp)

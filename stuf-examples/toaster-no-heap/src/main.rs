@@ -144,21 +144,30 @@ fn main() -> ! {
     hprintln!("━━━ NO-HEAP UPDATE SEQUENCE ━━━━━━━━━━━━━━━━━━");
 
     hprintln!("[1/5] fetching timestamp...");
-    let ts = fetch_to_buf("timestamp.json", unsafe { static_buf(core::ptr::addr_of_mut!(TS_BUF)) }).unwrap_or_else(|| {
+    let ts = fetch_to_buf("timestamp.json", unsafe {
+        static_buf(core::ptr::addr_of_mut!(TS_BUF))
+    })
+    .unwrap_or_else(|| {
         hprintln!("      FAILED");
         loop {}
     });
     hprintln!("      ok ({} bytes)", ts.len());
 
     hprintln!("[2/5] fetching snapshot...");
-    let snap = fetch_to_buf("snapshot.json", unsafe { static_buf(core::ptr::addr_of_mut!(SNAP_BUF)) }).unwrap_or_else(|| {
+    let snap = fetch_to_buf("snapshot.json", unsafe {
+        static_buf(core::ptr::addr_of_mut!(SNAP_BUF))
+    })
+    .unwrap_or_else(|| {
         hprintln!("      FAILED");
         loop {}
     });
     hprintln!("      ok ({} bytes)", snap.len());
 
     hprintln!("[3/5] fetching targets...");
-    let targets = fetch_to_buf("targets.json", unsafe { static_buf(core::ptr::addr_of_mut!(TARGETS_BUF)) }).unwrap_or_else(|| {
+    let targets = fetch_to_buf("targets.json", unsafe {
+        static_buf(core::ptr::addr_of_mut!(TARGETS_BUF))
+    })
+    .unwrap_or_else(|| {
         hprintln!("      FAILED");
         loop {}
     });
@@ -193,7 +202,10 @@ fn main() -> ! {
     hprintln!("      targets verified");
 
     hprintln!("[5/5] fetching firmware v{}...", NEW_VERSION);
-    let firmware = fetch_to_buf(TARGET_FIRMWARE, unsafe { static_buf(core::ptr::addr_of_mut!(FIRMWARE_BUF_BYTES)) }).unwrap_or_else(|| {
+    let firmware = fetch_to_buf(TARGET_FIRMWARE, unsafe {
+        static_buf(core::ptr::addr_of_mut!(FIRMWARE_BUF_BYTES))
+    })
+    .unwrap_or_else(|| {
         hprintln!("      FAILED");
         loop {}
     });
