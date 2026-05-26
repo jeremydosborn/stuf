@@ -1,8 +1,5 @@
 #![cfg_attr(not(feature = "std"), no_std)]
 
-#[cfg(all(feature = "alloc", feature = "no-heap"))]
-compile_error!("features `alloc` and `no-heap` are mutually exclusive for stuf-tuf verification");
-
 #[cfg(not(any(feature = "alloc", feature = "no-heap")))]
 compile_error!("enable either `alloc` or `no-heap`");
 
@@ -29,6 +26,6 @@ pub use error::{Error, Result};
 pub use verify::chain::TrustAnchor;
 
 #[cfg(feature = "no-heap")]
-pub use verify::no_heap::TrustAnchor;
+pub use verify::no_heap::TrustAnchor as NoHeapTrustAnchor;
 
 pub use verify::limits::Limits;
