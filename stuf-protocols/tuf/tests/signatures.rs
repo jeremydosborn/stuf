@@ -2,7 +2,6 @@ mod common;
 
 use common::*;
 use std::collections::BTreeMap;
-use stuf_env::crypto::Ed25519Verifier;
 use stuf_tuf::error::Error;
 use stuf_tuf::schema::keys::KeyId;
 use stuf_tuf::schema::role::RoleKeys;
@@ -22,14 +21,7 @@ fn valid_ed25519_signature_passes() {
         sig: sig_hex,
     }];
 
-    assert!(verify_signatures(
-        &sigs,
-        &key.role_keys(1),
-        &available,
-        canonical,
-        &Ed25519Verifier
-    )
-    .is_ok());
+    assert!(verify_signatures(&sigs, &key.role_keys(1), &available, canonical,).is_ok());
 }
 
 #[test]
@@ -45,13 +37,7 @@ fn tampered_payload_rejected() {
         sig: sig_hex,
     }];
 
-    let result = verify_signatures(
-        &sigs,
-        &key.role_keys(1),
-        &available,
-        b"tampered payload",
-        &Ed25519Verifier,
-    );
+    let result = verify_signatures(&sigs, &key.role_keys(1), &available, b"tampered payload");
     assert!(result.is_err());
 }
 
@@ -72,14 +58,7 @@ fn wrong_key_rejected() {
         sig: sig_hex,
     }];
 
-    assert!(verify_signatures(
-        &sigs,
-        &different_key.role_keys(1),
-        &available,
-        canonical,
-        &Ed25519Verifier
-    )
-    .is_err());
+    assert!(verify_signatures(&sigs, &different_key.role_keys(1), &available, canonical,).is_err());
 }
 
 #[test]
@@ -97,7 +76,7 @@ fn threshold_not_met_rejected() {
         sig: key1.sign(canonical),
     }];
 
-    let result = verify_signatures(&sigs, &role_keys, &available, canonical, &Ed25519Verifier);
+    let result = verify_signatures(&sigs, &role_keys, &available, canonical);
     assert!(matches!(
         result,
         Err(Error::ThresholdNotMet {
@@ -128,7 +107,7 @@ fn duplicate_sig_not_double_counted() {
     ];
 
     assert!(matches!(
-        verify_signatures(&sigs, &role_keys, &available, canonical, &Ed25519Verifier),
+        verify_signatures(&sigs, &role_keys, &available, canonical),
         Err(Error::ThresholdNotMet { .. })
     ));
 }
@@ -145,14 +124,7 @@ fn unknown_keyid_ignored() {
         sig: key.sign(canonical),
     }];
 
-    assert!(verify_signatures(
-        &sigs,
-        &key.role_keys(1),
-        &available,
-        canonical,
-        &Ed25519Verifier
-    )
-    .is_err());
+    assert!(verify_signatures(&sigs, &key.role_keys(1), &available, canonical,).is_err());
 }
 
 #[test]
@@ -176,5 +148,5 @@ fn multi_key_threshold_met() {
         },
     ];
 
-    assert!(verify_signatures(&sigs, &role_keys, &available, canonical, &Ed25519Verifier).is_ok());
+    assert!(verify_signatures(&sigs, &role_keys, &available, canonical).is_ok());
 }

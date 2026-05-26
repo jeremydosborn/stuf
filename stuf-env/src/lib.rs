@@ -1,16 +1,23 @@
-//! stuf-env — environment implementations for the stuf framework.
+//! stuf-env — environment abstractions and implementations for stuf.
 //!
-//! Each implementation is gated behind a feature flag.
-//! Apps pull in only what they need via Cargo.toml features.
+//! Defines traits for pluggable environmental concerns (transport, clock,
+//! storage) and provides concrete implementations behind feature flags.
+//!
+//! Crypto primitives are direct functions, not traits — the app's
+//! feature flags select which algorithms are compiled in.
 
 #![no_std]
+
+#[cfg(feature = "alloc")]
 extern crate alloc;
 
-#[cfg(feature = "crypto-ed25519")]
-pub mod crypto;
+// ── Trait definitions (always available) ────────────────────────────────────
 
-#[cfg(feature = "transport-mock")]
+pub mod clock;
+pub mod storage;
 pub mod transport;
 
-#[cfg(any(feature = "clock-fixed", feature = "clock-std"))]
-pub mod clock;
+// ── Crypto implementations (feature-gated) ─────────────────────────────────
+
+#[cfg(any(feature = "crypto-ed25519", feature = "hash-sha256"))]
+pub mod crypto;

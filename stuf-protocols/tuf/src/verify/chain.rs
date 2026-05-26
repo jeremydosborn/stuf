@@ -3,8 +3,13 @@
 //! timestamp → snapshot → targets → firmware
 //!
 //! Each step only becomes available after the previous succeeds.
-//! The chain is generic over Transport, Clock, Verifier, and Encoding —
-//! all injected by the app via stuf-env implementations.
+//! The chain is generic over Transport and Clock — injected by the app.
+//! Crypto is called directly via stuf-env functions (feature-gated at
+//! compile time). Encoding is called directly via stuf-encoding functions
+//! (feature-gated at compile time).
+//!
+//! Configurable `Limits` bound the maximum size and complexity of
+//! metadata the verifier will accept, preventing resource exhaustion.
 //!
 //! Internal chain state uses Checked<T> (signature checks passed).
 //! The final output — verify_target / verify_target_bytes — returns
@@ -18,10 +23,10 @@
 //! MVP scope: trusted root baked in, no root rotation.
 
 use stuf_core::trust::Verified;
-use stuf_encoding::{Canonicalize, Decode};
+use stuf_env::clock::Clock;
+use stuf_env::transport::Transport;
 
 use crate::{
-    env::transport::Transport,
     error::{Error, Result},
     schema::{
         role::{Role, RoleType},
@@ -31,124 +36,161 @@ use crate::{
         targets::{Target, Targets},
         timestamp::Timestamp,
     },
-    sign::traits::Verifier,
     verify::{
         expiry::check_expiry,
+        hash::{verify_metadata_hash, verify_metadata_length, verify_target_hashes},
+        limits::Limits,
         signatures::verify_signatures,
-        state::{Checked, Clock, Unverified},
+        state::{Checked, Unverified},
     },
 };
+
+// ── Size check helper ─────────────────────────────────────────────────────────
+
+fn check_size(bytes: &[u8], max: usize, role: &'static str) -> Result<()> {
+    if bytes.len() > max {
+        Err(Error::MetadataTooLarge {
+            role,
+            limit: max,
+            actual: bytes.len(),
+        })
+    } else {
+        Ok(())
+    }
+}
+
+// ── Structural limit checks ──────────────────────────────────────────────────
+
+fn check_root_limits(root: &Root, limits: &Limits) -> Result<()> {
+    if root.keys.len() > limits.max_keys {
+        return Err(Error::TooManyKeys {
+            limit: limits.max_keys,
+            actual: root.keys.len(),
+        });
+    }
+    Ok(())
+}
+
+fn check_signature_limits<T>(signed: &Signed<T>, limits: &Limits) -> Result<()> {
+    if signed.signatures.len() > limits.max_signatures {
+        return Err(Error::TooManySignatures {
+            limit: limits.max_signatures,
+            actual: signed.signatures.len(),
+        });
+    }
+    Ok(())
+}
+
+fn check_targets_limits(targets: &Targets, limits: &Limits) -> Result<()> {
+    if targets.targets.len() > limits.max_targets_entries {
+        return Err(Error::TooManyTargets {
+            limit: limits.max_targets_entries,
+            actual: targets.targets.len(),
+        });
+    }
+    Ok(())
+}
 
 // ── Type states ───────────────────────────────────────────────────────────────
 
 /// Entry point — bootstrapped from a trusted root baked into the binary.
-pub struct TrustAnchor<V, T, C, E>
+pub struct TrustAnchor<T, C>
 where
-    V: Verifier,
     T: Transport,
     C: Clock,
-    E: Canonicalize + Decode,
 {
     pub(crate) root: Checked<Root>,
-    pub(crate) verifier: V,
     pub(crate) transport: T,
     pub(crate) clock: C,
-    pub(crate) encoding: E,
+    pub(crate) limits: Limits,
 }
 
-pub struct TimestampChecked<V, T, C, E>
+pub struct TimestampChecked<T, C>
 where
-    V: Verifier,
     T: Transport,
     C: Clock,
-    E: Canonicalize + Decode,
 {
     pub(crate) root: Checked<Root>,
     pub(crate) timestamp: Checked<Timestamp>,
-    pub(crate) verifier: V,
     pub(crate) transport: T,
     pub(crate) clock: C,
-    pub(crate) encoding: E,
+    pub(crate) limits: Limits,
 }
 
-pub struct SnapshotChecked<V, T, C, E>
+pub struct SnapshotChecked<T, C>
 where
-    V: Verifier,
     T: Transport,
     C: Clock,
-    E: Canonicalize + Decode,
 {
     pub(crate) root: Checked<Root>,
     pub(crate) snapshot: Checked<Snapshot>,
-    pub(crate) verifier: V,
     pub(crate) transport: T,
     pub(crate) clock: C,
-    pub(crate) encoding: E,
+    pub(crate) limits: Limits,
 }
 
 #[allow(dead_code)]
-pub struct TargetsChecked<V, T, C, E>
+pub struct TargetsChecked<T, C>
 where
-    V: Verifier,
     T: Transport,
     C: Clock,
-    E: Canonicalize + Decode,
 {
     pub(crate) root: Checked<Root>,
     pub(crate) snapshot: Checked<Snapshot>,
     pub(crate) targets: Checked<Targets>,
-    pub(crate) verifier: V,
     pub(crate) transport: T,
     pub(crate) clock: C,
-    pub(crate) encoding: E,
+    pub(crate) limits: Limits,
 }
 
 // ── TrustAnchor ───────────────────────────────────────────────────────────────
 
-impl<V, T, C, E> TrustAnchor<V, T, C, E>
+impl<T, C> TrustAnchor<T, C>
 where
-    V: Verifier,
     T: Transport,
     C: Clock,
-    E: Canonicalize + Decode,
 {
     /// Bootstrap from a trusted root baked in at compile time.
-    pub fn new(
-        root_bytes: &[u8],
-        verifier: V,
-        transport: T,
-        clock: C,
-        encoding: E,
-    ) -> Result<Self> {
-        let signed: Signed<Root> = encoding.decode(root_bytes)?;
+    /// Uses default limits.
+    pub fn new(root_bytes: &[u8], transport: T, clock: C) -> Result<Self> {
+        Self::with_limits(root_bytes, transport, clock, Limits::default())
+    }
+
+    /// Bootstrap with custom metadata limits.
+    pub fn with_limits(root_bytes: &[u8], transport: T, clock: C, limits: Limits) -> Result<Self> {
+        check_size(root_bytes, limits.max_root_bytes, "root")?;
+
+        let signed: Signed<Root> = stuf_encoding::decode(root_bytes)?;
+        check_signature_limits(&signed, &limits)?;
+
         let unverified = Unverified::from_signed(signed);
 
         let root_inner = unverified.payload().clone();
+        check_root_limits(&root_inner, &limits)?;
+
         let role_keys = root_inner
             .role_keys(&RoleType::Root)
             .ok_or(Error::NoKeysForRole)?;
 
-        let canonical = encoding.canonicalize(unverified.payload())?;
+        let canonical = stuf_encoding::canonicalize(unverified.payload())?;
         verify_signatures(
             unverified.signatures(),
             role_keys,
             &root_inner.keys,
             &canonical,
-            &verifier,
         )?;
 
         let checked = unverified.into_checked();
         Ok(Self {
             root: checked,
-            verifier,
             transport,
             clock,
-            encoding,
+            limits,
         })
     }
 
     /// Step 1 — fetch and verify timestamp.json via Transport.
-    pub fn verify_timestamp(self) -> Result<TimestampChecked<V, T, C, E>> {
+    pub fn verify_timestamp(self) -> Result<TimestampChecked<T, C>> {
         let bytes = self
             .transport
             .fetch("timestamp.json")
@@ -157,12 +199,16 @@ where
     }
 
     /// Step 1 (no_alloc) — verify pre-fetched timestamp bytes.
-    pub fn verify_timestamp_bytes(self, bytes: &[u8]) -> Result<TimestampChecked<V, T, C, E>> {
+    pub fn verify_timestamp_bytes(self, bytes: &[u8]) -> Result<TimestampChecked<T, C>> {
         self.verify_timestamp_inner(bytes)
     }
 
-    fn verify_timestamp_inner(self, bytes: &[u8]) -> Result<TimestampChecked<V, T, C, E>> {
-        let signed: Signed<Timestamp> = self.encoding.decode(bytes)?;
+    fn verify_timestamp_inner(self, bytes: &[u8]) -> Result<TimestampChecked<T, C>> {
+        check_size(bytes, self.limits.max_timestamp_bytes, "timestamp")?;
+
+        let signed: Signed<Timestamp> = stuf_encoding::decode(bytes)?;
+        check_signature_limits(&signed, &self.limits)?;
+
         let unverified = Unverified::from_signed(signed);
 
         let role_keys = self
@@ -171,13 +217,12 @@ where
             .role_keys(&RoleType::Timestamp)
             .ok_or(Error::NoKeysForRole)?;
 
-        let canonical = self.encoding.canonicalize(unverified.payload())?;
+        let canonical = stuf_encoding::canonicalize(unverified.payload())?;
         verify_signatures(
             unverified.signatures(),
             role_keys,
             &self.root.get().keys,
             &canonical,
-            &self.verifier,
         )?;
 
         let checked = unverified.into_checked();
@@ -186,25 +231,22 @@ where
         Ok(TimestampChecked {
             root: self.root,
             timestamp: checked,
-            verifier: self.verifier,
             transport: self.transport,
             clock: self.clock,
-            encoding: self.encoding,
+            limits: self.limits,
         })
     }
 }
 
 // ── TimestampChecked ──────────────────────────────────────────────────────────
 
-impl<V, T, C, E> TimestampChecked<V, T, C, E>
+impl<T, C> TimestampChecked<T, C>
 where
-    V: Verifier,
     T: Transport,
     C: Clock,
-    E: Canonicalize + Decode,
 {
     /// Step 2 — fetch and verify snapshot.json via Transport.
-    pub fn verify_snapshot(self) -> Result<SnapshotChecked<V, T, C, E>> {
+    pub fn verify_snapshot(self) -> Result<SnapshotChecked<T, C>> {
         let bytes = self
             .transport
             .fetch("snapshot.json")
@@ -213,18 +255,28 @@ where
     }
 
     /// Step 2 (no_alloc) — verify pre-fetched snapshot bytes.
-    pub fn verify_snapshot_bytes(self, bytes: &[u8]) -> Result<SnapshotChecked<V, T, C, E>> {
+    pub fn verify_snapshot_bytes(self, bytes: &[u8]) -> Result<SnapshotChecked<T, C>> {
         self.verify_snapshot_inner(bytes)
     }
 
-    fn verify_snapshot_inner(self, bytes: &[u8]) -> Result<SnapshotChecked<V, T, C, E>> {
+    fn verify_snapshot_inner(self, bytes: &[u8]) -> Result<SnapshotChecked<T, C>> {
+        check_size(bytes, self.limits.max_snapshot_bytes, "snapshot")?;
+
         let snap_meta = self
             .timestamp
             .get()
             .snapshot_meta()
             .ok_or(Error::SnapshotMismatch)?;
 
-        let signed: Signed<Snapshot> = self.encoding.decode(bytes)?;
+        // Verify snapshot bytes against timestamp's declared hash+length
+        if let Some(ref hashes) = snap_meta.hashes {
+            verify_metadata_hash(bytes, hashes)?;
+        }
+        verify_metadata_length(bytes, snap_meta.length)?;
+
+        let signed: Signed<Snapshot> = stuf_encoding::decode(bytes)?;
+        check_signature_limits(&signed, &self.limits)?;
+
         let unverified = Unverified::from_signed(signed);
 
         let role_keys = self
@@ -233,13 +285,12 @@ where
             .role_keys(&RoleType::Snapshot)
             .ok_or(Error::NoKeysForRole)?;
 
-        let canonical = self.encoding.canonicalize(unverified.payload())?;
+        let canonical = stuf_encoding::canonicalize(unverified.payload())?;
         verify_signatures(
             unverified.signatures(),
             role_keys,
             &self.root.get().keys,
             &canonical,
-            &self.verifier,
         )?;
 
         let checked = unverified.into_checked();
@@ -256,25 +307,22 @@ where
         Ok(SnapshotChecked {
             root: self.root,
             snapshot: checked,
-            verifier: self.verifier,
             transport: self.transport,
             clock: self.clock,
-            encoding: self.encoding,
+            limits: self.limits,
         })
     }
 }
 
 // ── SnapshotChecked ───────────────────────────────────────────────────────────
 
-impl<V, T, C, E> SnapshotChecked<V, T, C, E>
+impl<T, C> SnapshotChecked<T, C>
 where
-    V: Verifier,
     T: Transport,
     C: Clock,
-    E: Canonicalize + Decode,
 {
     /// Step 3 — fetch and verify targets.json via Transport.
-    pub fn verify_targets(self) -> Result<TargetsChecked<V, T, C, E>> {
+    pub fn verify_targets(self) -> Result<TargetsChecked<T, C>> {
         let bytes = self
             .transport
             .fetch("targets.json")
@@ -283,18 +331,28 @@ where
     }
 
     /// Step 3 (no_alloc) — verify pre-fetched targets bytes.
-    pub fn verify_targets_bytes(self, bytes: &[u8]) -> Result<TargetsChecked<V, T, C, E>> {
+    pub fn verify_targets_bytes(self, bytes: &[u8]) -> Result<TargetsChecked<T, C>> {
         self.verify_targets_inner(bytes)
     }
 
-    fn verify_targets_inner(self, bytes: &[u8]) -> Result<TargetsChecked<V, T, C, E>> {
+    fn verify_targets_inner(self, bytes: &[u8]) -> Result<TargetsChecked<T, C>> {
+        check_size(bytes, self.limits.max_targets_bytes, "targets")?;
+
         let snap_meta = self
             .snapshot
             .get()
             .meta_for("targets.json")
             .ok_or(Error::SnapshotMismatch)?;
 
-        let signed: Signed<Targets> = self.encoding.decode(bytes)?;
+        // Verify targets bytes against snapshot's declared hash+length
+        if let Some(ref hashes) = snap_meta.hashes {
+            verify_metadata_hash(bytes, hashes)?;
+        }
+        verify_metadata_length(bytes, snap_meta.length)?;
+
+        let signed: Signed<Targets> = stuf_encoding::decode(bytes)?;
+        check_signature_limits(&signed, &self.limits)?;
+
         let unverified = Unverified::from_signed(signed);
 
         let role_keys = self
@@ -303,16 +361,17 @@ where
             .role_keys(&RoleType::Targets)
             .ok_or(Error::NoKeysForRole)?;
 
-        let canonical = self.encoding.canonicalize(unverified.payload())?;
+        let canonical = stuf_encoding::canonicalize(unverified.payload())?;
         verify_signatures(
             unverified.signatures(),
             role_keys,
             &self.root.get().keys,
             &canonical,
-            &self.verifier,
         )?;
 
         let checked = unverified.into_checked();
+
+        check_targets_limits(checked.get(), &self.limits)?;
 
         if checked.get().version() != snap_meta.version {
             return Err(Error::VersionMismatch {
@@ -327,22 +386,19 @@ where
             root: self.root,
             snapshot: self.snapshot,
             targets: checked,
-            verifier: self.verifier,
             transport: self.transport,
             clock: self.clock,
-            encoding: self.encoding,
+            limits: self.limits,
         })
     }
 }
 
 // ── TargetsChecked ────────────────────────────────────────────────────────────
 
-impl<V, T, C, E> TargetsChecked<V, T, C, E>
+impl<T, C> TargetsChecked<T, C>
 where
-    V: Verifier,
     T: Transport,
     C: Clock,
-    E: Canonicalize + Decode,
 {
     /// Step 4 — fetch firmware via Transport and verify against targets metadata.
     /// Returns core's Verified<Target> — the one true trust type.
@@ -351,7 +407,6 @@ where
             .get()
             .get_target(name)
             .ok_or(Error::TargetNotFound)?;
-
         let bytes = self.transport.fetch(name).map_err(|_| Error::Transport)?;
         self.verify_target_inner(name, bytes.as_ref())
     }
@@ -377,10 +432,8 @@ where
             });
         }
 
-        // Hash check delegated to verifier — stuf-env owns crypto
-        self.verifier
-            .verify_hash(bytes, &target_meta.hashes)
-            .map_err(|_| Error::TargetHashMismatch)?;
+        // Hash check — calls stuf-env directly
+        verify_target_hashes(bytes, &target_meta.hashes)?;
 
         // Full TUF chain passed — return core's Verified<T>
         Ok(Verified::new(target_meta.clone()))

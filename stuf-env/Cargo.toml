@@ -2,15 +2,16 @@
 name = "stuf-env"
 version = "0.1.0"
 edition = "2021"
-description = "Environment implementations for the stuf supply chain security framework"
+description = "Environment abstractions and implementations for the stuf framework"
 license = "Apache-2.0 OR MIT"
 
 [features]
 default = []
-alloc = ["serde/alloc", "hex/alloc"]
+alloc = ["dep:hex", "hex/alloc"]
 
 # Crypto implementations
-crypto-ed25519 = ["ed25519-dalek", "sha2"]
+crypto-ed25519 = ["ed25519-dalek"]
+hash-sha256 = ["sha2"]
 
 # Transport implementations
 transport-mock = []
@@ -19,18 +20,13 @@ transport-mock = []
 clock-fixed = []
 clock-std = []
 
-
 # Convenience bundles for demo
-demo = ["crypto-ed25519", "transport-mock", "clock-fixed"]
+demo = ["alloc", "crypto-ed25519", "hash-sha256", "transport-mock", "clock-fixed"]
 
 [dependencies]
-stuf-tuf = { path = "../stuf-protocols/tuf", default-features = false, features = ["alloc"] }
-
 # Crypto — optional
 ed25519-dalek = { version = "2.0", default-features = false, features = ["alloc"], optional = true }
 sha2 = { version = "0.11", default-features = false, optional = true }
 
-
-# Always needed
-serde = { version = "1.0", default-features = false, features = ["derive"] }
-hex = { version = "0.4", default-features = false, features = ["alloc"] }
+# Only needed by alloc convenience helpers
+hex = { version = "0.4", default-features = false, optional = true }

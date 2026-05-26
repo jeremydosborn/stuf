@@ -1,10 +1,9 @@
 mod common;
 
 use common::*;
-use stuf_env::crypto::Ed25519Verifier;
+use stuf_env::clock::FixedClock;
 use stuf_tuf::error::Error;
 use stuf_tuf::verify::chain::TrustAnchor;
-use stuf_tuf::verify::state::FixedClock;
 
 fn build_transport(
     root_key: &TestKey,
@@ -49,14 +48,7 @@ fn snapshot_rollback_rejected() {
     // Timestamp expects snapshot v5 but we receive v1
     let (root_bytes, transport) = build_transport(&rk, &tk, &sk, &tsk, 1, 1, 1, 5, 1);
 
-    let anchor = TrustAnchor::new(
-        &root_bytes,
-        Ed25519Verifier,
-        transport,
-        FixedClock(NOW),
-        TufEncoding,
-    )
-    .unwrap();
+    let anchor = TrustAnchor::new(&root_bytes, transport, FixedClock(NOW)).unwrap();
     let result = anchor.verify_timestamp().unwrap().verify_snapshot();
     assert!(matches!(
         result,
@@ -77,14 +69,7 @@ fn targets_rollback_rejected() {
     // Snapshot expects targets v5 but we receive v1
     let (root_bytes, transport) = build_transport(&rk, &tk, &sk, &tsk, 1, 1, 1, 1, 5);
 
-    let anchor = TrustAnchor::new(
-        &root_bytes,
-        Ed25519Verifier,
-        transport,
-        FixedClock(NOW),
-        TufEncoding,
-    )
-    .unwrap();
+    let anchor = TrustAnchor::new(&root_bytes, transport, FixedClock(NOW)).unwrap();
     let result = anchor
         .verify_timestamp()
         .unwrap()
@@ -109,14 +94,7 @@ fn equal_version_accepted() {
 
     let (root_bytes, transport) = build_transport(&rk, &tk, &sk, &tsk, 1, 1, 1, 1, 1);
 
-    let anchor = TrustAnchor::new(
-        &root_bytes,
-        Ed25519Verifier,
-        transport,
-        FixedClock(NOW),
-        TufEncoding,
-    )
-    .unwrap();
+    let anchor = TrustAnchor::new(&root_bytes, transport, FixedClock(NOW)).unwrap();
     let result = anchor
         .verify_timestamp()
         .unwrap()

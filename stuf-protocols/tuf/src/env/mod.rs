@@ -1,7 +1,8 @@
-pub mod clock;
-pub mod storage;
-pub mod transport;
+//! Re-exports from stuf-env.
+//!
+//! stuf-env owns the trait definitions and implementations.
+//! stuf-tuf re-exports them for convenience.
 
-pub use clock::{Clock, ClockError};
-pub use storage::Storage;
-pub use transport::Transport;
+pub use stuf_env::clock::{self, Clock};
+pub use stuf_env::storage::{self, Storage};
+pub use stuf_env::transport::{self, Transport};

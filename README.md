@@ -1,43 +1,47 @@
 # stuf
 
-Supply chain security for Rust. Runs anywhere from bare-metal to cloud and beyond.
+Supply chain security for Rust, designed for targets from bare-metal to cloud.
 
 ## Architecture
 
-```
-stuf-core         # trust kernel: Verified<T>, Verifier<T>, no_std
-stuf-encoding     # canonical serialization and decoding traits
-stuf-env          # platform bindings: crypto, transport, storage, clock
-stuf-protocols    # TUF to start
-stuf-examples     # toaster demo (ARM Cortex-M3), publisher
-```
+```text
+stuf-core              # trust kernel: Verified<T>, Verifier<T>, no_std
+stuf-encoding          # canonical serialization and decoding traits
+stuf-env               # crypto, transport, storage, and clock bindings
+stuf-protocols/tuf     # TUF verification and publishing logic
+stuf-examples          # publisher and embedded toaster demos
+````
 
 ## How it works
 
-The app picks a protocol and a platform. Feature flags control what
-compiles. The compiler assembles only the components you need.
+Applications compose verification profiles using stuf's primitives:
 
-stuf-core defines the trust type (Verified<T>) and verification trait.
-Every protocol implements the same trait and mints the same type.
-The minting ceremony is consistent across all protocols.
+`stuf-core` defines the verification trait and the `Verified<T>` trust type, giving all protocols uniform type-level enforcement for verified data.
 
-stuf-encoding owns canonical serialization and decoding. stuf-tuf
-implements RFC 8785 (JCS) for canonicalization and JSON decoding behind
-feature flags, with OLPC stubbed for legacy interop.
+`stuf-encoding` owns canonical serialization and decoding. The TUF implementation uses RFC 8785 / JCS canonical JSON for signed metadata.
 
-stuf-env provides pluggable platform bindings via feature flags. Swap
-crypto, transport, and storage per target without changing protocol logic.
+`stuf-env` provides pluggable platform bindings for crypto, transport, storage, and clocks.
+
+`stuf-protocols/tuf` implements the first protocol profile.
 
 ## Embedded
 
-no_std + alloc. No OS assumptions. Currently requires a small heap.
-A no-heap path is planned.
+`stuf` supports `no_std + alloc` and includes a no-heap TUF verifier profile for constrained targets.
+
+## Examples
+
+The workspace includes:
+
+```text
+publisher             # generates signed TUF demo metadata and target files
+toaster               # ARM Cortex-M demo using the small-heap verifier profile
+toaster-no-heap       # ARM Cortex-M demo using the no-heap verifier profile
+```
 
 ## Status
 
-Early. Core complete. TUF v0.5 implemented. Integration and spec
-alignment in progress.
+Early. Core architecture is in place. The first TUF profile is implemented. The embedded no-heap verifier profile is working and covered by CI.
 
 ## License
 
-Apache 2.0
+Apache-2.0

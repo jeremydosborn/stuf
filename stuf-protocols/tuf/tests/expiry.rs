@@ -1,8 +1,8 @@
 mod common;
 
+use stuf_env::clock::FixedClock;
 use stuf_tuf::error::Error;
 use stuf_tuf::verify::expiry::check_expiry;
-use stuf_tuf::verify::state::FixedClock;
 
 #[test]
 fn valid_expiry_passes() {
