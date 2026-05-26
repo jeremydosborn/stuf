@@ -16,5 +16,5 @@ stuf-encoding = { path = "../../stuf-encoding", default-features = false, featur
 cortex-m = { version = "0.7", features = ["critical-section-single-core"] }
 cortex-m-rt = { version = "0.7" }
 cortex-m-semihosting = { version = "0.5" }
-panic-semihosting    = { version = "0.5" }
+panic-semihosting    = { version = "0.6" }
 embedded-alloc = "0.7"
