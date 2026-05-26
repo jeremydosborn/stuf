@@ -1,4 +1,3 @@
-use alloc::vec::Vec;
 use core::fmt;
 
 #[derive(Debug)]
@@ -14,10 +13,4 @@ impl fmt::Display for EncodeError {
             EncodeError::Decode => write!(f, "decoding failed"),
         }
     }
-}
-
-pub trait Canonicalize {
-    fn canonicalize<T>(&self, value: &T) -> Result<Vec<u8>, EncodeError>
-    where
-        T: serde::Serialize;
 }

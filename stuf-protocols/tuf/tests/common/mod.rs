@@ -60,7 +60,7 @@ impl TestKey {
 // ── Signing helpers ───────────────────────────────────────────────────────────
 
 fn canonical_bytes<T: serde::Serialize>(value: &T) -> Vec<u8> {
-    JcsJsonEncoding.canonicalize(value).expect("canonicalize")
+    stuf_encoding::canonicalize(value).expect("canonicalize")
 }
 
 pub fn sign_root(root: &Root, key: &TestKey) -> Vec<u8> {
@@ -247,8 +247,3 @@ impl stuf_env::transport::Transport for MockTransport {
         self.files.get(id).cloned().ok_or(())
     }
 }
-
-// ── Encoding ──────────────────────────────────────────────────────────────────
-
-use stuf_encoding::Canonicalize;
-pub use stuf_encoding::JcsJsonEncoding;

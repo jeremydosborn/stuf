@@ -13,7 +13,6 @@ use cortex_m_rt::entry;
 use cortex_m_semihosting::hprintln;
 use panic_semihosting as _;
 
-use stuf_encoding::JcsJsonEncoding;
 use stuf_env::clock::FixedClock;
 use stuf_env::transport::Transport;
 use stuf_tuf::verify::chain::TrustAnchor;
@@ -175,11 +174,10 @@ fn main() -> ! {
     hprintln!("[4/5] verifying TUF metadata chain...");
     let clock = FixedClock(1_700_000_000);
 
-    let anchor = TrustAnchor::new(ROOT_BYTES, SemihostingTransport, clock, JcsJsonEncoding)
-        .unwrap_or_else(|e| {
-            hprintln!("  root FAILED: {:?}", e);
-            loop {}
-        });
+    let anchor = TrustAnchor::new(ROOT_BYTES, SemihostingTransport, clock).unwrap_or_else(|e| {
+        hprintln!("  root FAILED: {:?}", e);
+        loop {}
+    });
     hprintln!("      root verified");
 
     let ts_ok = anchor.verify_timestamp_bytes(ts).unwrap_or_else(|e| {

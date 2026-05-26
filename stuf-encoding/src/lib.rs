@@ -3,14 +3,10 @@ extern crate alloc;
 
 mod heap;
 
-pub use heap::canonicalize::{Canonicalize, EncodeError};
-pub use heap::decode::Decode;
+pub use heap::error::EncodeError;
 
 #[cfg(feature = "jcs")]
-pub use heap::jcs::Jcs;
+pub use heap::jcs::canonicalize;
 
 #[cfg(feature = "json")]
-pub use heap::json::JsonDecoder;
-
-#[cfg(feature = "jcs")]
-pub use heap::combined::JcsJsonEncoding;
+pub use heap::json::decode;

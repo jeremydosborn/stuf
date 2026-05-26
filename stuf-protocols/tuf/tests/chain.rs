@@ -29,8 +29,7 @@ fn build_full_chain() -> (Vec<u8>, MockTransport) {
 #[test]
 fn full_chain_succeeds() {
     let (root_bytes, transport) = build_full_chain();
-    let anchor =
-        TrustAnchor::new(&root_bytes, transport, FixedClock(NOW), JcsJsonEncoding).unwrap();
+    let anchor = TrustAnchor::new(&root_bytes, transport, FixedClock(NOW)).unwrap();
     let result = anchor
         .verify_timestamp()
         .unwrap()
@@ -47,7 +46,7 @@ fn tampered_root_rejected() {
     let (mut root_bytes, transport) = build_full_chain();
     let mid = root_bytes.len() / 2;
     root_bytes[mid] ^= 0xff;
-    assert!(TrustAnchor::new(&root_bytes, transport, FixedClock(NOW), JcsJsonEncoding).is_err());
+    assert!(TrustAnchor::new(&root_bytes, transport, FixedClock(NOW)).is_err());
 }
 
 #[test]
@@ -64,8 +63,7 @@ fn wrong_key_for_timestamp_rejected() {
 
     let transport = MockTransport::new().with("timestamp.json", sign_timestamp(&ts, &wrong_key));
 
-    let anchor =
-        TrustAnchor::new(&root_bytes, transport, FixedClock(NOW), JcsJsonEncoding).unwrap();
+    let anchor = TrustAnchor::new(&root_bytes, transport, FixedClock(NOW)).unwrap();
     assert!(anchor.verify_timestamp().is_err());
 }
 
@@ -82,8 +80,7 @@ fn expired_timestamp_rejected() {
 
     let transport = MockTransport::new().with("timestamp.json", sign_timestamp(&ts, &tsk));
 
-    let anchor =
-        TrustAnchor::new(&root_bytes, transport, FixedClock(NOW), JcsJsonEncoding).unwrap();
+    let anchor = TrustAnchor::new(&root_bytes, transport, FixedClock(NOW)).unwrap();
     assert!(matches!(anchor.verify_timestamp(), Err(Error::Expired)));
 }
 
@@ -103,8 +100,7 @@ fn expired_snapshot_rejected() {
         .with("timestamp.json", sign_timestamp(&ts, &tsk))
         .with("snapshot.json", sign_snapshot(&snap, &sk));
 
-    let anchor =
-        TrustAnchor::new(&root_bytes, transport, FixedClock(NOW), JcsJsonEncoding).unwrap();
+    let anchor = TrustAnchor::new(&root_bytes, transport, FixedClock(NOW)).unwrap();
     assert!(matches!(
         anchor.verify_timestamp().unwrap().verify_snapshot(),
         Err(Error::Expired)
@@ -129,8 +125,7 @@ fn expired_targets_rejected() {
         .with("snapshot.json", sign_snapshot(&snap, &sk))
         .with("targets.json", sign_targets(&targets, &tk));
 
-    let anchor =
-        TrustAnchor::new(&root_bytes, transport, FixedClock(NOW), JcsJsonEncoding).unwrap();
+    let anchor = TrustAnchor::new(&root_bytes, transport, FixedClock(NOW)).unwrap();
     assert!(matches!(
         anchor
             .verify_timestamp()
@@ -153,8 +148,7 @@ fn transport_error_propagated() {
     let root_bytes = sign_root(&root, &rk);
     let transport = MockTransport::new(); // empty — nothing available
 
-    let anchor =
-        TrustAnchor::new(&root_bytes, transport, FixedClock(NOW), JcsJsonEncoding).unwrap();
+    let anchor = TrustAnchor::new(&root_bytes, transport, FixedClock(NOW)).unwrap();
     assert!(matches!(anchor.verify_timestamp(), Err(Error::Transport)));
 }
 
@@ -175,8 +169,7 @@ fn mix_and_match_metadata_rejected() {
         .with("timestamp.json", sign_timestamp(&ts_a, &tsk_a))
         .with("snapshot.json", sign_snapshot(&snap_b, &sk_b)); // wrong keys
 
-    let anchor =
-        TrustAnchor::new(&root_bytes_a, transport, FixedClock(NOW), JcsJsonEncoding).unwrap();
+    let anchor = TrustAnchor::new(&root_bytes_a, transport, FixedClock(NOW)).unwrap();
     assert!(anchor
         .verify_timestamp()
         .unwrap()
