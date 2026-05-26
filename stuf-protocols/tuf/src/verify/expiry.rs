@@ -1,9 +1,8 @@
 //! Expiry checking — used at each step of the verify chain.
 
-use crate::{
-    error::{Error, Result},
-    verify::state::Clock,
-};
+use stuf_env::clock::Clock;
+
+use crate::error::{Error, Result};
 
 /// Check that metadata has not expired.
 /// expires is unix timestamp (seconds since epoch).

@@ -30,6 +30,32 @@ pub enum Error {
     Transport,
     /// Encoding error.
     Encoding,
+    /// Metadata hash mismatch (timestamp→snapshot or snapshot→targets).
+    MetadataHashMismatch,
+    /// Metadata length mismatch (timestamp→snapshot or snapshot→targets).
+    MetadataLengthMismatch { expected: u64, actual: u64 },
+    /// No hash algorithm compiled in — cannot verify.
+    NoHashAlgorithm,
+    /// Key type or signature scheme not supported.
+    UnsupportedKeyType,
+    /// Target has no supported hash algorithm in its metadata.
+    NoSupportedHash,
+    /// Hash hex string has wrong length for its algorithm.
+    InvalidHashLength { expected: usize, actual: usize },
+    /// Hash hex string contains non-hex characters.
+    InvalidHashEncoding,
+    /// Metadata exceeds configured size limit.
+    MetadataTooLarge {
+        role: &'static str,
+        limit: usize,
+        actual: usize,
+    },
+    /// Root metadata contains too many keys.
+    TooManyKeys { limit: usize, actual: usize },
+    /// Metadata contains too many signatures.
+    TooManySignatures { limit: usize, actual: usize },
+    /// Targets metadata contains too many target entries.
+    TooManyTargets { limit: usize, actual: usize },
 }
 
 impl fmt::Display for Error {
@@ -59,6 +85,42 @@ impl fmt::Display for Error {
             Error::NoKeysForRole => write!(f, "no keys for role"),
             Error::Transport => write!(f, "transport error"),
             Error::Encoding => write!(f, "encoding error"),
+            Error::MetadataHashMismatch => write!(f, "metadata hash mismatch"),
+            Error::MetadataLengthMismatch { expected, actual } => {
+                write!(
+                    f,
+                    "metadata length mismatch: expected {expected}, got {actual}"
+                )
+            }
+            Error::NoHashAlgorithm => write!(f, "no hash algorithm compiled in"),
+            Error::UnsupportedKeyType => write!(f, "unsupported key type or signature scheme"),
+            Error::NoSupportedHash => write!(f, "no supported hash in target metadata"),
+            Error::InvalidHashLength { expected, actual } => {
+                write!(
+                    f,
+                    "invalid hash length: expected {expected} hex chars, got {actual}"
+                )
+            }
+            Error::InvalidHashEncoding => write!(f, "hash contains non-hex characters"),
+            Error::MetadataTooLarge {
+                role,
+                limit,
+                actual,
+            } => {
+                write!(
+                    f,
+                    "{role} metadata too large: limit {limit} bytes, got {actual}"
+                )
+            }
+            Error::TooManyKeys { limit, actual } => {
+                write!(f, "too many keys: limit {limit}, got {actual}")
+            }
+            Error::TooManySignatures { limit, actual } => {
+                write!(f, "too many signatures: limit {limit}, got {actual}")
+            }
+            Error::TooManyTargets { limit, actual } => {
+                write!(f, "too many targets: limit {limit}, got {actual}")
+            }
         }
     }
 }

@@ -6,7 +6,7 @@ use std::collections::BTreeMap;
 
 use ed25519_dalek::{Signer, SigningKey};
 use rand::rngs::OsRng;
-use sha2::{Digest, Sha256};
+use stuf_env::crypto::sha256_hex;
 
 use stuf_tuf::schema::{
     keys::{KeyId, KeyType, KeyValue, PublicKey, SignatureScheme},
@@ -32,9 +32,7 @@ impl TestKey {
         let public_bytes = signing_key.verifying_key().to_bytes();
         let public_hex = hex::encode(public_bytes);
 
-        let mut hasher = Sha256::new();
-        hasher.update(&public_bytes);
-        let key_id = KeyId(hex::encode(hasher.finalize()));
+        let key_id = KeyId(sha256_hex(&public_bytes));
 
         let public_key = PublicKey {
             keytype: KeyType::Ed25519,
@@ -62,7 +60,7 @@ impl TestKey {
 // ── Signing helpers ───────────────────────────────────────────────────────────
 
 fn canonical_bytes<T: serde::Serialize>(value: &T) -> Vec<u8> {
-    TufEncoding.canonicalize(value).expect("canonicalize")
+    stuf_encoding::canonicalize(value).expect("canonicalize")
 }
 
 pub fn sign_root(root: &Root, key: &TestKey) -> Vec<u8> {
@@ -172,6 +170,32 @@ pub fn make_timestamp(snapshot_version: u32, expires: u64, version: u32) -> Time
     }
 }
 
+/// Timestamp with explicit hash and length for snapshot.
+pub fn make_timestamp_with_hash(
+    snapshot_version: u32,
+    expires: u64,
+    version: u32,
+    snapshot_hash: Option<BTreeMap<String, String>>,
+    snapshot_length: Option<u64>,
+) -> Timestamp {
+    let mut meta = BTreeMap::new();
+    meta.insert(
+        "snapshot.json".to_string(),
+        TimestampMeta {
+            version: snapshot_version,
+            length: snapshot_length,
+            hashes: snapshot_hash,
+        },
+    );
+    Timestamp {
+        role_type: "timestamp".to_string(),
+        spec_version: "1.0.0".to_string(),
+        version,
+        expires,
+        meta,
+    }
+}
+
 pub fn make_snapshot(targets_version: u32, expires: u64, version: u32) -> Snapshot {
     let mut meta = BTreeMap::new();
     meta.insert(
@@ -191,8 +215,34 @@ pub fn make_snapshot(targets_version: u32, expires: u64, version: u32) -> Snapsh
     }
 }
 
+/// Snapshot with explicit hash and length for targets.
+pub fn make_snapshot_with_hash(
+    targets_version: u32,
+    expires: u64,
+    version: u32,
+    targets_hash: Option<BTreeMap<String, String>>,
+    targets_length: Option<u64>,
+) -> Snapshot {
+    let mut meta = BTreeMap::new();
+    meta.insert(
+        "targets.json".to_string(),
+        SnapshotMeta {
+            version: targets_version,
+            length: targets_length,
+            hashes: targets_hash,
+        },
+    );
+    Snapshot {
+        role_type: "snapshot".to_string(),
+        spec_version: "1.0.0".to_string(),
+        version,
+        expires,
+        meta,
+    }
+}
+
 pub fn make_targets(firmware: &[u8], expires: u64, version: u32) -> Targets {
-    let hash = hex::encode(Sha256::digest(firmware));
+    let hash = sha256_hex(firmware);
     let mut targets_map = BTreeMap::new();
     targets_map.insert(
         "firmware.bin".to_string(),
@@ -213,6 +263,41 @@ pub fn make_targets(firmware: &[u8], expires: u64, version: u32) -> Targets {
         targets: targets_map,
         delegations: None,
     }
+}
+
+/// Targets with a custom hash string for the firmware entry.
+pub fn make_targets_with_hash(
+    firmware: &[u8],
+    sha256: Option<String>,
+    sha512: Option<String>,
+    expires: u64,
+    version: u32,
+) -> Targets {
+    let mut targets_map = BTreeMap::new();
+    targets_map.insert(
+        "firmware.bin".to_string(),
+        Target {
+            length: firmware.len() as u64,
+            hashes: Hashes { sha256, sha512 },
+            custom: BTreeMap::new(),
+        },
+    );
+    Targets {
+        role_type: "targets".to_string(),
+        spec_version: "1.0.0".to_string(),
+        version,
+        expires,
+        targets: targets_map,
+        delegations: None,
+    }
+}
+
+/// Compute SHA-256 hash of bytes and return as a BTreeMap suitable for
+/// TimestampMeta.hashes / SnapshotMeta.hashes.
+pub fn sha256_hash_map(bytes: &[u8]) -> BTreeMap<String, String> {
+    let mut m = BTreeMap::new();
+    m.insert("sha256".to_string(), sha256_hex(bytes));
+    m
 }
 
 // ── Constants ─────────────────────────────────────────────────────────────────
@@ -241,7 +326,7 @@ impl MockTransport {
     }
 }
 
-impl stuf_tuf::env::transport::Transport for MockTransport {
+impl stuf_env::transport::Transport for MockTransport {
     type Buffer = Vec<u8>;
     type Error = ();
 
@@ -249,10 +334,3 @@ impl stuf_tuf::env::transport::Transport for MockTransport {
         self.files.get(id).cloned().ok_or(())
     }
 }
-
-// ── JsonEncoding ──────────────────────────────────────────────────────────────
-// Replaced by TufEncoding from stuf-tuf. Tests use it directly.
-
-use stuf_encoding::Canonicalize;
-pub use stuf_tuf::encoding::TufEncoding;
-pub type JsonEncoding = TufEncoding;

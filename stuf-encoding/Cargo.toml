@@ -2,10 +2,16 @@
 name = "stuf-encoding"
 version = "0.1.0"
 edition = "2021"
+description = "Encoding traits and implementations for the stuf framework"
+license = "Apache-2.0 OR MIT"
 
 [features]
-default = ["alloc"]
+default = ["alloc", "jcs", "json"]
 alloc = ["serde/alloc"]
+jcs = ["alloc", "json"]
+json = ["alloc", "serde_json"]
+no-heap = []
+no-heap-jcs = ["no-heap"]
 
 [dependencies]
 serde = { version = "=1.0.228", default-features = false }
