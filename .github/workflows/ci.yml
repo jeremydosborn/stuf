@@ -64,6 +64,9 @@ jobs:
       - name: Test — stuf-tuf
         run: cargo test -p stuf-tuf --features "crypto-ed25519 hash-sha256"
 
+      - name: Test — stuf-tuf no-heap profile
+        run: cargo test -p stuf-tuf --test no_heap --no-default-features --features "alloc no-heap crypto-ed25519 hash-sha256"
+
       - name: Test — stuf-env
         run: cargo test -p stuf-env
 
@@ -73,3 +76,6 @@ jobs:
 
       - name: Build — toaster (ARM Cortex-M3)
         run: cargo build --target thumbv7m-none-eabi -p toaster --release
+
+      - name: Build — toaster no-heap (ARM Cortex-M3)
+        run: cargo build --target thumbv7m-none-eabi -p toaster-no-heap --release

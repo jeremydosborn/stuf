@@ -1,11 +1,17 @@
 #![cfg(feature = "no-heap")]
 
+mod common;
+
+use std::collections::BTreeMap;
 use std::fs;
 use std::path::PathBuf;
 
 use stuf_env::clock::FixedClock;
 use stuf_env::transport::Transport;
+use stuf_tuf::error::Error;
 use stuf_tuf::verify::no_heap::TrustAnchor;
+
+use common::*;
 
 const NOW: u64 = 1_700_000_000;
 
@@ -73,4 +79,179 @@ fn no_heap_full_chain_verifies_against_publisher_output() {
         .expect("no-heap firmware should verify");
 
     assert_eq!(verified.into_inner().length, firmware.len() as u64);
+}
+
+fn make_no_heap_chain_with_target_hash(
+    sha256: Option<String>,
+) -> (Vec<u8>, Vec<u8>, Vec<u8>, Vec<u8>) {
+    let rk = TestKey::generate();
+    let tk = TestKey::generate();
+    let sk = TestKey::generate();
+    let tsk = TestKey::generate();
+
+    let root = make_root(&rk, &tk, &sk, &tsk, FAR_FUTURE, 1);
+    let root_bytes = sign_root(&root, &rk);
+
+    let ts = make_timestamp(1, FAR_FUTURE, 1);
+    let snap = make_snapshot(1, FAR_FUTURE, 1);
+    let targets = make_targets_with_hash(FIRMWARE, sha256, None, FAR_FUTURE, 1);
+
+    (
+        root_bytes,
+        sign_timestamp(&ts, &tsk),
+        sign_snapshot(&snap, &sk),
+        sign_targets(&targets, &tk),
+    )
+}
+
+#[test]
+fn no_heap_truncated_target_sha256_reports_invalid_hash_length() {
+    let short_hash = "abcd1234abcd1234abcd1234abcd1234".to_string();
+    let (root, timestamp, snapshot, targets) =
+        make_no_heap_chain_with_target_hash(Some(short_hash));
+
+    let checked = TrustAnchor::new(&root, NoTransport, FixedClock(common::NOW))
+        .expect("root should verify")
+        .verify_timestamp_bytes(&timestamp)
+        .expect("timestamp should verify")
+        .verify_snapshot_bytes(&snapshot)
+        .expect("snapshot should verify")
+        .verify_targets_bytes(&targets)
+        .expect("targets should verify");
+
+    assert!(matches!(
+        checked.verify_target_bytes("firmware.bin", FIRMWARE),
+        Err(Error::InvalidHashLength {
+            expected: 64,
+            actual: 32
+        })
+    ));
+}
+
+#[test]
+fn no_heap_non_hex_target_sha256_reports_invalid_hash_encoding() {
+    let bad_hex = "z".repeat(64);
+    let (root, timestamp, snapshot, targets) = make_no_heap_chain_with_target_hash(Some(bad_hex));
+
+    let checked = TrustAnchor::new(&root, NoTransport, FixedClock(common::NOW))
+        .expect("root should verify")
+        .verify_timestamp_bytes(&timestamp)
+        .expect("timestamp should verify")
+        .verify_snapshot_bytes(&snapshot)
+        .expect("snapshot should verify")
+        .verify_targets_bytes(&targets)
+        .expect("targets should verify");
+
+    assert!(matches!(
+        checked.verify_target_bytes("firmware.bin", FIRMWARE),
+        Err(Error::InvalidHashEncoding)
+    ));
+}
+
+#[test]
+fn no_heap_wrong_target_sha256_reports_target_hash_mismatch() {
+    let wrong_hash = "a".repeat(64);
+    let (root, timestamp, snapshot, targets) =
+        make_no_heap_chain_with_target_hash(Some(wrong_hash));
+
+    let checked = TrustAnchor::new(&root, NoTransport, FixedClock(common::NOW))
+        .expect("root should verify")
+        .verify_timestamp_bytes(&timestamp)
+        .expect("timestamp should verify")
+        .verify_snapshot_bytes(&snapshot)
+        .expect("snapshot should verify")
+        .verify_targets_bytes(&targets)
+        .expect("targets should verify");
+
+    assert!(matches!(
+        checked.verify_target_bytes("firmware.bin", FIRMWARE),
+        Err(Error::TargetHashMismatch)
+    ));
+}
+
+#[test]
+fn no_heap_bad_snapshot_metadata_hash_length_reports_invalid_hash_length() {
+    let rk = TestKey::generate();
+    let tk = TestKey::generate();
+    let sk = TestKey::generate();
+    let tsk = TestKey::generate();
+
+    let root = make_root(&rk, &tk, &sk, &tsk, FAR_FUTURE, 1);
+    let root_bytes = sign_root(&root, &rk);
+
+    let snap = make_snapshot(1, FAR_FUTURE, 1);
+    let snap_bytes = sign_snapshot(&snap, &sk);
+
+    let mut bad_hash = BTreeMap::new();
+    bad_hash.insert("sha256".to_string(), "abcd1234".to_string());
+
+    let ts = make_timestamp_with_hash(1, FAR_FUTURE, 1, Some(bad_hash), None);
+    let ts_bytes = sign_timestamp(&ts, &tsk);
+
+    let anchor = TrustAnchor::new(&root_bytes, NoTransport, FixedClock(common::NOW)).unwrap();
+
+    assert!(matches!(
+        anchor
+            .verify_timestamp_bytes(&ts_bytes)
+            .unwrap()
+            .verify_snapshot_bytes(&snap_bytes),
+        Err(Error::InvalidHashLength { expected: 64, .. })
+    ));
+}
+
+#[test]
+fn no_heap_wrong_snapshot_metadata_hash_reports_metadata_hash_mismatch() {
+    let rk = TestKey::generate();
+    let tk = TestKey::generate();
+    let sk = TestKey::generate();
+    let tsk = TestKey::generate();
+
+    let root = make_root(&rk, &tk, &sk, &tsk, FAR_FUTURE, 1);
+    let root_bytes = sign_root(&root, &rk);
+
+    let snap = make_snapshot(1, FAR_FUTURE, 1);
+    let snap_bytes = sign_snapshot(&snap, &sk);
+
+    let mut bad_hash = BTreeMap::new();
+    bad_hash.insert("sha256".to_string(), "a".repeat(64));
+
+    let ts = make_timestamp_with_hash(1, FAR_FUTURE, 1, Some(bad_hash), None);
+    let ts_bytes = sign_timestamp(&ts, &tsk);
+
+    let anchor = TrustAnchor::new(&root_bytes, NoTransport, FixedClock(common::NOW)).unwrap();
+
+    assert!(matches!(
+        anchor
+            .verify_timestamp_bytes(&ts_bytes)
+            .unwrap()
+            .verify_snapshot_bytes(&snap_bytes),
+        Err(Error::MetadataHashMismatch)
+    ));
+}
+
+#[test]
+fn no_heap_bad_metadata_length_reports_metadata_length_mismatch() {
+    let rk = TestKey::generate();
+    let tk = TestKey::generate();
+    let sk = TestKey::generate();
+    let tsk = TestKey::generate();
+
+    let root = make_root(&rk, &tk, &sk, &tsk, FAR_FUTURE, 1);
+    let root_bytes = sign_root(&root, &rk);
+
+    let snap = make_snapshot(1, FAR_FUTURE, 1);
+    let snap_bytes = sign_snapshot(&snap, &sk);
+
+    let ts = make_timestamp_with_hash(1, FAR_FUTURE, 1, None, Some(1));
+    let ts_bytes = sign_timestamp(&ts, &tsk);
+
+    let anchor = TrustAnchor::new(&root_bytes, NoTransport, FixedClock(common::NOW)).unwrap();
+
+    assert!(matches!(
+        anchor
+            .verify_timestamp_bytes(&ts_bytes)
+            .unwrap()
+            .verify_snapshot_bytes(&snap_bytes),
+        Err(Error::MetadataLengthMismatch { .. })
+    ));
 }
