@@ -1,12 +1,10 @@
+//! Storage abstraction.
+//!
+//! Where trusted state is persisted so rollback attacks can be
+//! detected across restarts. The implementor decides how and where
+//! data is stored — filesystem, flash, EEPROM, RAM, S3, etc.
+
 /// Storage abstraction — where trusted state is persisted.
-///
-/// stuf-tuf uses storage to persist the last trusted metadata versions
-/// so rollback attacks can be detected across restarts. The implementor
-/// decides how and where data is stored — filesystem, flash, EEPROM,
-/// RAM, S3, etc.
-///
-/// The buffer type for reads is chosen by the implementor, same
-/// pattern as Transport — no allocation assumptions.
 pub trait Storage {
     /// The buffer type returned by get.
     type Buffer: AsRef<[u8]>;

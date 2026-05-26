@@ -1,23 +1,23 @@
 //! RFC 8785 — JSON Canonicalization Scheme (JCS).
+//!
+//! Not TUF-specific — any protocol that needs deterministic JSON
+//! for signature verification can use this.
 
 use alloc::string::{String, ToString};
 use alloc::vec::Vec;
 use serde_json::Value;
-use stuf_encoding::{Canonicalize, EncodeError};
 
-#[derive(Debug, Clone, Copy)]
-pub struct Jcs;
+use crate::EncodeError;
 
-impl Canonicalize for Jcs {
-    fn canonicalize<T>(&self, value: &T) -> Result<Vec<u8>, EncodeError>
-    where
-        T: serde::Serialize,
-    {
-        let json_value = serde_json::to_value(value).map_err(|_| EncodeError::Canonicalize)?;
-        let mut buf = Vec::new();
-        write_canonical(&json_value, &mut buf)?;
-        Ok(buf)
-    }
+/// Canonicalize a value to deterministic JSON bytes per RFC 8785.
+pub fn canonicalize<T>(value: &T) -> Result<Vec<u8>, EncodeError>
+where
+    T: serde::Serialize,
+{
+    let json_value = serde_json::to_value(value).map_err(|_| EncodeError::Canonicalize)?;
+    let mut buf = Vec::new();
+    write_canonical(&json_value, &mut buf)?;
+    Ok(buf)
 }
 
 fn write_canonical(value: &Value, buf: &mut Vec<u8>) -> Result<(), EncodeError> {

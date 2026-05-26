@@ -1,42 +1,28 @@
-//! Mock transport for testing and demo.
+//! Transport abstraction and implementations.
 
-use std::collections::HashMap;
-use stuf_tuf::env::transport::Transport;
+/// The URL or resource identifier passed to fetch.
+/// Protocol-agnostic — could be HTTP, UART channel, CAN bus ID, etc.
+pub type ResourceId<'a> = &'a str;
 
-pub struct MockTransport {
-    files: HashMap<String, Vec<u8>>,
+/// Transport abstraction — how bytes move in this environment.
+///
+/// The implementor decides the buffer type. A std environment returns
+/// `Vec<u8>`, a bare metal environment returns a fixed stack buffer.
+pub trait Transport {
+    /// The buffer type returned by fetch.
+    type Buffer: AsRef<[u8]>;
+
+    /// The error type for transport failures.
+    type Error: core::fmt::Debug;
+
+    /// Fetch a resource by identifier.
+    fn fetch(&self, id: ResourceId<'_>) -> Result<Self::Buffer, Self::Error>;
 }
 
-impl MockTransport {
-    pub fn new() -> Self {
-        Self {
-            files: HashMap::new(),
-        }
-    }
+// ── Implementations ────────────────────────────────────────────────────────
 
-    pub fn add(mut self, name: &str, content: Vec<u8>) -> Self {
-        self.files.insert(name.to_string(), content);
-        self
-    }
-}
+#[cfg(feature = "transport-mock")]
+mod mock;
 
-impl Default for MockTransport {
-    fn default() -> Self {
-        Self::new()
-    }
-}
-
-#[derive(Debug)]
-pub struct TransportError(pub String);
-
-impl Transport for MockTransport {
-    type Buffer = Vec<u8>;
-    type Error = TransportError;
-
-    fn fetch(&self, id: &str) -> Result<Vec<u8>, TransportError> {
-        self.files
-            .get(id)
-            .cloned()
-            .ok_or_else(|| TransportError(format!("file not found: {id}")))
-    }
-}
+#[cfg(feature = "transport-mock")]
+pub use mock::MockTransport;
