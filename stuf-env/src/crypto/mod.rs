@@ -13,4 +13,7 @@ mod sha256;
 pub use ed25519::{ed25519_verify, Ed25519Error};
 
 #[cfg(feature = "hash-sha256")]
-pub use sha256::{sha256, sha256_hex};
+pub use sha256::sha256;
+
+#[cfg(all(feature = "hash-sha256", feature = "alloc"))]
+pub use sha256::sha256_hex;

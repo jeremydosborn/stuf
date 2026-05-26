@@ -1,8 +1,28 @@
+#[cfg(feature = "alloc")]
 pub mod chain;
-pub mod delegation; // stub for MVP
+
+#[cfg(feature = "alloc")]
+pub mod delegation;
+
+#[cfg(feature = "alloc")]
 pub mod expiry;
+
+#[cfg(feature = "alloc")]
 pub mod hash;
+
 pub mod limits;
+
+#[cfg(feature = "no-heap")]
+pub mod no_heap;
+
+#[cfg(feature = "alloc")]
+pub mod root;
+
+#[cfg(feature = "alloc")]
 pub mod signatures;
+
+#[cfg(feature = "alloc")]
 pub mod state;
-pub mod targets; // stub for MVP
+
+#[cfg(feature = "alloc")]
+pub mod targets;

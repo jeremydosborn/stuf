@@ -1,9 +1,8 @@
 //! SHA-256 hashing primitive.
 //!
 //! Wraps the sha2 crate behind a feature flag.
-//! stuf-tuf calls these directly for target and metadata hash checks.
+//! stuf-tuf calls this directly for target and metadata hash checks.
 
-use alloc::string::String;
 use sha2::{Digest, Sha256};
 
 /// Compute SHA-256 digest, return raw bytes.
@@ -15,6 +14,7 @@ pub fn sha256(bytes: &[u8]) -> [u8; 32] {
 }
 
 /// Compute SHA-256 digest, return hex-encoded string.
-pub fn sha256_hex(bytes: &[u8]) -> String {
+#[cfg(feature = "alloc")]
+pub fn sha256_hex(bytes: &[u8]) -> alloc::string::String {
     hex::encode(sha256(bytes))
 }

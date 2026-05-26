@@ -8,9 +8,11 @@ license = "Apache-2.0 OR MIT"
 [features]
 default = ["alloc", "jcs", "json"]
 alloc = ["serde/alloc"]
-jcs = ["json"]
-json = ["serde_json"]
+jcs = ["alloc", "json"]
+json = ["alloc", "serde_json"]
+no-heap = []
+no-heap-jcs = ["no-heap"]
 
 [dependencies]
-serde = { version = "=1.0.219", default-features = false }
+serde = { version = "=1.0.219", default-features = false, optional = false }
 serde_json = { version = "1.0", default-features = false, features = ["alloc"], optional = true }

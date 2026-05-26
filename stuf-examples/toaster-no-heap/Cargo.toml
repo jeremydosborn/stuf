@@ -1,0 +1,18 @@
+[package]
+name = "toaster-no-heap"
+version = "0.1.0"
+edition = "2021"
+description = "stuf TUF demo — no-heap ARM Cortex-M3 firmware updater"
+
+[[bin]]
+name = "toaster-no-heap"
+path = "src/main.rs"
+
+[dependencies]
+stuf-tuf = { path = "../../stuf-protocols/tuf", default-features = false, features = ["no-heap", "crypto-ed25519", "hash-sha256"] }
+stuf-env = { path = "../../stuf-env", default-features = false, features = ["crypto-ed25519", "hash-sha256", "clock-fixed"] }
+
+cortex-m = { version = "0.7", features = ["critical-section-single-core"] }
+cortex-m-rt = { version = "0.7" }
+cortex-m-semihosting = { version = "0.5" }
+panic-semihosting = { version = "0.5" }

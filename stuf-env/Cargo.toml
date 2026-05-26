@@ -7,7 +7,7 @@ license = "Apache-2.0 OR MIT"
 
 [features]
 default = []
-alloc = ["hex/alloc"]
+alloc = ["dep:hex", "hex/alloc"]
 
 # Crypto implementations
 crypto-ed25519 = ["ed25519-dalek"]
@@ -21,12 +21,12 @@ clock-fixed = []
 clock-std = []
 
 # Convenience bundles for demo
-demo = ["crypto-ed25519", "hash-sha256", "transport-mock", "clock-fixed"]
+demo = ["alloc", "crypto-ed25519", "hash-sha256", "transport-mock", "clock-fixed"]
 
 [dependencies]
 # Crypto — optional
-ed25519-dalek = { version = "2.0", default-features = false, features = ["alloc"], optional = true }
+ed25519-dalek = { version = "2.0", default-features = false, optional = true }
 sha2 = { version = "0.10", default-features = false, optional = true }
 
-# Always needed
-hex = { version = "0.4", default-features = false, features = ["alloc"] }
+# Only needed by alloc convenience helpers.
+hex = { version = "0.4", default-features = false, optional = true }

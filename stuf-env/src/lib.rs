@@ -7,6 +7,8 @@
 //! feature flags select which algorithms are compiled in.
 
 #![no_std]
+
+#[cfg(feature = "alloc")]
 extern crate alloc;
 
 // ── Trait definitions (always available) ────────────────────────────────────
