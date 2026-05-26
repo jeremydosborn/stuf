@@ -40,6 +40,10 @@ pub enum Error {
     UnsupportedKeyType,
     /// Target has no supported hash algorithm in its metadata.
     NoSupportedHash,
+    /// Hash hex string has wrong length for its algorithm.
+    InvalidHashLength { expected: usize, actual: usize },
+    /// Hash hex string contains non-hex characters.
+    InvalidHashEncoding,
 }
 
 impl fmt::Display for Error {
@@ -79,6 +83,13 @@ impl fmt::Display for Error {
             Error::NoHashAlgorithm => write!(f, "no hash algorithm compiled in"),
             Error::UnsupportedKeyType => write!(f, "unsupported key type or signature scheme"),
             Error::NoSupportedHash => write!(f, "no supported hash in target metadata"),
+            Error::InvalidHashLength { expected, actual } => {
+                write!(
+                    f,
+                    "invalid hash length: expected {expected} hex chars, got {actual}"
+                )
+            }
+            Error::InvalidHashEncoding => write!(f, "hash contains non-hex characters"),
         }
     }
 }

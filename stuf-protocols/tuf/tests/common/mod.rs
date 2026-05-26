@@ -170,6 +170,32 @@ pub fn make_timestamp(snapshot_version: u32, expires: u64, version: u32) -> Time
     }
 }
 
+/// Timestamp with explicit hash and length for snapshot.
+pub fn make_timestamp_with_hash(
+    snapshot_version: u32,
+    expires: u64,
+    version: u32,
+    snapshot_hash: Option<BTreeMap<String, String>>,
+    snapshot_length: Option<u64>,
+) -> Timestamp {
+    let mut meta = BTreeMap::new();
+    meta.insert(
+        "snapshot.json".to_string(),
+        TimestampMeta {
+            version: snapshot_version,
+            length: snapshot_length,
+            hashes: snapshot_hash,
+        },
+    );
+    Timestamp {
+        role_type: "timestamp".to_string(),
+        spec_version: "1.0.0".to_string(),
+        version,
+        expires,
+        meta,
+    }
+}
+
 pub fn make_snapshot(targets_version: u32, expires: u64, version: u32) -> Snapshot {
     let mut meta = BTreeMap::new();
     meta.insert(
@@ -178,6 +204,32 @@ pub fn make_snapshot(targets_version: u32, expires: u64, version: u32) -> Snapsh
             version: targets_version,
             length: None,
             hashes: None,
+        },
+    );
+    Snapshot {
+        role_type: "snapshot".to_string(),
+        spec_version: "1.0.0".to_string(),
+        version,
+        expires,
+        meta,
+    }
+}
+
+/// Snapshot with explicit hash and length for targets.
+pub fn make_snapshot_with_hash(
+    targets_version: u32,
+    expires: u64,
+    version: u32,
+    targets_hash: Option<BTreeMap<String, String>>,
+    targets_length: Option<u64>,
+) -> Snapshot {
+    let mut meta = BTreeMap::new();
+    meta.insert(
+        "targets.json".to_string(),
+        SnapshotMeta {
+            version: targets_version,
+            length: targets_length,
+            hashes: targets_hash,
         },
     );
     Snapshot {
@@ -211,6 +263,41 @@ pub fn make_targets(firmware: &[u8], expires: u64, version: u32) -> Targets {
         targets: targets_map,
         delegations: None,
     }
+}
+
+/// Targets with a custom hash string for the firmware entry.
+pub fn make_targets_with_hash(
+    firmware: &[u8],
+    sha256: Option<String>,
+    sha512: Option<String>,
+    expires: u64,
+    version: u32,
+) -> Targets {
+    let mut targets_map = BTreeMap::new();
+    targets_map.insert(
+        "firmware.bin".to_string(),
+        Target {
+            length: firmware.len() as u64,
+            hashes: Hashes { sha256, sha512 },
+            custom: BTreeMap::new(),
+        },
+    );
+    Targets {
+        role_type: "targets".to_string(),
+        spec_version: "1.0.0".to_string(),
+        version,
+        expires,
+        targets: targets_map,
+        delegations: None,
+    }
+}
+
+/// Compute SHA-256 hash of bytes and return as a BTreeMap suitable for
+/// TimestampMeta.hashes / SnapshotMeta.hashes.
+pub fn sha256_hash_map(bytes: &[u8]) -> BTreeMap<String, String> {
+    let mut m = BTreeMap::new();
+    m.insert("sha256".to_string(), sha256_hex(bytes));
+    m
 }
 
 // ── Constants ─────────────────────────────────────────────────────────────────
