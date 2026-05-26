@@ -64,6 +64,9 @@ jobs:
       - name: Test — stuf-tuf
         run: cargo test -p stuf-tuf --features "crypto-ed25519 hash-sha256"
 
+      - name: Generate toaster publisher repo
+        run: cargo run -p publisher
+
       - name: Test — stuf-tuf no-heap profile
         run: cargo test -p stuf-tuf --test no_heap --no-default-features --features "alloc no-heap crypto-ed25519 hash-sha256"
 
