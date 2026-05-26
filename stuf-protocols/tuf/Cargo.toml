@@ -22,7 +22,7 @@ crypto-ed25519 = ["stuf-env/crypto-ed25519"]
 hash-sha256 = ["stuf-env/hash-sha256"]
 
 [dependencies]
-serde = { version = "=1.0.219", default-features = false, features = ["derive"] }
+serde = { version = "=1.0.228", default-features = false, features = ["derive"] }
 hex = { version = "0.4", default-features = false, optional = true }
 stuf-core = { path = "../../stuf-core" }
 stuf-encoding = { path = "../../stuf-encoding", default-features = false }
@@ -31,8 +31,8 @@ stuf-env = { path = "../../stuf-env", default-features = false }
 [dev-dependencies]
 stuf-env = { path = "../../stuf-env", features = ["alloc", "crypto-ed25519", "hash-sha256", "transport-mock", "clock-fixed"] }
 stuf-encoding = { path = "../../stuf-encoding" }
-ed25519-dalek = { version = "2.0", features = ["rand_core"] }
-rand = { version = "0.10" }
-sha2 = { version = "0.10" }
+ed25519-dalek = { version = "2.0", default-features = false, features = ["rand_core"] }
+rand = "0.8"
+sha2 = { version = "0.11", default-features = false }
 hex = { version = "0.4" }
 serde_json = { version = "1.0" }
