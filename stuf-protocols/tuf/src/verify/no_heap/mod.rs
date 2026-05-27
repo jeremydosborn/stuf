@@ -191,6 +191,10 @@ where
         let sigs = signatures(root_bytes)?;
         let root = parse_root(signed, &limits)?;
         verify_role_signatures(signed, sigs, &root, RoleName::Root, &limits)?;
+
+        // SECURITY: Check root expiry. See heap chain comment for rationale.
+        check_expiry(root.expires, &clock)?;
+
         Ok(Self {
             root,
             transport,
@@ -317,7 +321,7 @@ where
                 actual: bytes.len() as u64,
             });
         }
-        verify_sha256_hex(bytes, t.sha256)?;
+        verify_sha256_hex(bytes, t.sha256).map_err(|_| Error::TargetHashMismatch)?;
         Ok(Verified::new(t))
     }
 
@@ -348,7 +352,27 @@ fn check_expiry<C: Clock>(expires: u64, clock: &C) -> Result<()> {
     }
 }
 
+fn role_label(type_str: &str) -> &'static str {
+    match type_str {
+        "root" => "root",
+        "timestamp" => "timestamp",
+        "snapshot" => "snapshot",
+        "targets" => "targets",
+        _ => "unknown",
+    }
+}
+
 fn parse_root<'a>(signed: &'a [u8], limits: &Limits) -> Result<RootView<'a>> {
+    // TUF spec: verify _type field matches expected role
+    let type_str = get_str(signed, "_type")?;
+    if type_str != "root" {
+        return Err(Error::role_type_mismatch("root", role_label(type_str)));
+    }
+    // TUF spec: reject unsupported major versions
+    let spec_version = get_str(signed, "spec_version")?;
+    if !spec_version.starts_with("1.") {
+        return Err(Error::UnsupportedSpecVersion);
+    }
     let expires = get_u64(signed, "expires")?;
     let version = get_u64(signed, "version")? as u32;
     let mut root = RootView {
@@ -429,6 +453,14 @@ fn parse_role_keys<'a>(_role: RoleName, value: &'a [u8]) -> Result<RoleKeysView<
 }
 
 fn parse_timestamp<'a>(signed: &'a [u8]) -> Result<TimestampView<'a>> {
+    let type_str = get_str(signed, "_type")?;
+    if type_str != "timestamp" {
+        return Err(Error::role_type_mismatch("timestamp", role_label(type_str)));
+    }
+    let spec_version = get_str(signed, "spec_version")?;
+    if !spec_version.starts_with("1.") {
+        return Err(Error::UnsupportedSpecVersion);
+    }
     let expires = get_u64(signed, "expires")?;
     let version = get_u64(signed, "version")? as u32;
     let meta = enc::field(signed, "meta").map_err(|_| Error::Deserialize)?;
@@ -441,6 +473,14 @@ fn parse_timestamp<'a>(signed: &'a [u8]) -> Result<TimestampView<'a>> {
 }
 
 fn parse_snapshot<'a>(signed: &'a [u8]) -> Result<SnapshotView<'a>> {
+    let type_str = get_str(signed, "_type")?;
+    if type_str != "snapshot" {
+        return Err(Error::role_type_mismatch("snapshot", role_label(type_str)));
+    }
+    let spec_version = get_str(signed, "spec_version")?;
+    if !spec_version.starts_with("1.") {
+        return Err(Error::UnsupportedSpecVersion);
+    }
     let expires = get_u64(signed, "expires")?;
     let version = get_u64(signed, "version")? as u32;
     let meta = enc::field(signed, "meta").map_err(|_| Error::Deserialize)?;
@@ -474,6 +514,14 @@ fn parse_meta<'a>(bytes: &'a [u8]) -> Result<MetaView<'a>> {
 }
 
 fn parse_targets<'a>(signed: &'a [u8], limits: &Limits) -> Result<TargetsView<'a>> {
+    let type_str = get_str(signed, "_type")?;
+    if type_str != "targets" {
+        return Err(Error::role_type_mismatch("targets", role_label(type_str)));
+    }
+    let spec_version = get_str(signed, "spec_version")?;
+    if !spec_version.starts_with("1.") {
+        return Err(Error::UnsupportedSpecVersion);
+    }
     let expires = get_u64(signed, "expires")?;
     let version = get_u64(signed, "version")? as u32;
     let targets_obj = enc::field(signed, "targets").map_err(|_| Error::Deserialize)?;
@@ -637,10 +685,7 @@ fn verify_metadata_ref(bytes: &[u8], meta: MetaView<'_>) -> Result<()> {
         }
     }
     if let Some(expected) = meta.sha256 {
-        verify_sha256_hex(bytes, expected).map_err(|err| match err {
-            Error::TargetHashMismatch => Error::MetadataHashMismatch,
-            other => other,
-        })?;
+        verify_sha256_hex(bytes, expected).map_err(|_| Error::MetadataHashMismatch)?;
     }
     Ok(())
 }

@@ -53,6 +53,10 @@ impl Role for Root {
         RoleType::Root
     }
 
+    fn expected_type_str() -> &'static str {
+        "root"
+    }
+
     fn version(&self) -> u32 {
         self.version
     }

@@ -46,6 +46,10 @@ impl Role for Timestamp {
         RoleType::Timestamp
     }
 
+    fn expected_type_str() -> &'static str {
+        "timestamp"
+    }
+
     fn version(&self) -> u32 {
         self.version
     }

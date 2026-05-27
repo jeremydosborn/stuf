@@ -56,6 +56,17 @@ pub enum Error {
     TooManySignatures { limit: usize, actual: usize },
     /// Targets metadata contains too many target entries.
     TooManyTargets { limit: usize, actual: usize },
+    /// Metadata _type field does not match expected role.
+    #[cfg(feature = "full-errors")]
+    RoleTypeMismatch {
+        expected: &'static str,
+        actual: &'static str,
+    },
+
+    #[cfg(not(feature = "full-errors"))]
+    RoleTypeMismatch,
+    /// Metadata spec_version has unsupported major version.
+    UnsupportedSpecVersion,
 }
 
 impl fmt::Display for Error {
@@ -121,6 +132,19 @@ impl fmt::Display for Error {
             Error::TooManyTargets { limit, actual } => {
                 write!(f, "too many targets: limit {limit}, got {actual}")
             }
+            #[cfg(feature = "full-errors")]
+            Error::RoleTypeMismatch { expected, actual } => {
+                write!(
+                    f,
+                    "role type mismatch: expected {expected}, actual {actual}"
+                )
+            }
+
+            #[cfg(not(feature = "full-errors"))]
+            Error::RoleTypeMismatch => write!(f, "role type mismatch"),
+            Error::UnsupportedSpecVersion => {
+                write!(f, "unsupported spec_version: only 1.x is supported")
+            }
         }
     }
 }
@@ -132,6 +156,23 @@ impl From<stuf_encoding::EncodeError> for Error {
         match e {
             stuf_encoding::EncodeError::Decode => Error::Deserialize,
             stuf_encoding::EncodeError::Canonicalize => Error::Encoding,
+        }
+    }
+}
+
+impl Error {
+    #[allow(dead_code)]
+    pub(crate) fn role_type_mismatch(expected: &'static str, actual: &'static str) -> Self {
+        #[cfg(feature = "full-errors")]
+        {
+            Self::RoleTypeMismatch { expected, actual }
+        }
+
+        #[cfg(not(feature = "full-errors"))]
+        {
+            let _ = expected;
+            let _ = actual;
+            Self::RoleTypeMismatch
         }
     }
 }

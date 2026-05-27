@@ -45,6 +45,10 @@ impl Role for Snapshot {
         RoleType::Snapshot
     }
 
+    fn expected_type_str() -> &'static str {
+        "snapshot"
+    }
+
     fn version(&self) -> u32 {
         self.version
     }

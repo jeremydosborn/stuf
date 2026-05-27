@@ -59,6 +59,41 @@ fn check_size(bytes: &[u8], max: usize, role: &'static str) -> Result<()> {
     }
 }
 
+// ── Metadata field validation ─────────────────────────────────────────────────
+
+/// Verify that the `_type` field matches the expected role.
+/// TUF spec requires this to prevent role-confusion attacks where
+/// a validly-signed metadata file is served in the wrong position.
+fn check_role_type<R: Role>(actual_type: &str) -> Result<()> {
+    if actual_type != R::expected_type_str() {
+        // Map the actual string to a &'static str for the error.
+        // Unknown values get "unknown".
+        let actual: &'static str = match actual_type {
+            "root" => "root",
+            "timestamp" => "timestamp",
+            "snapshot" => "snapshot",
+            "targets" => "targets",
+            _ => "unknown",
+        };
+        Err(Error::RoleTypeMismatch {
+            expected: R::expected_type_str(),
+            actual,
+        })
+    } else {
+        Ok(())
+    }
+}
+
+/// Verify that the spec_version major version is 1.
+/// Future TUF spec versions may change metadata semantics.
+fn check_spec_version(spec_version: &str) -> Result<()> {
+    if !spec_version.starts_with("1.") {
+        Err(Error::UnsupportedSpecVersion)
+    } else {
+        Ok(())
+    }
+}
+
 // ── Structural limit checks ──────────────────────────────────────────────────
 
 fn check_root_limits(root: &Root, limits: &Limits) -> Result<()> {
@@ -166,6 +201,8 @@ where
         let unverified = Unverified::from_signed(signed);
 
         let root_inner = unverified.payload().clone();
+        check_role_type::<Root>(&root_inner.role_type)?;
+        check_spec_version(&root_inner.spec_version)?;
         check_root_limits(&root_inner, &limits)?;
 
         let role_keys = root_inner
@@ -181,6 +218,14 @@ where
         )?;
 
         let checked = unverified.into_checked();
+
+        // SECURITY: Check root expiry. The TUF spec requires clients to
+        // verify expiry for all metadata including root. Even though in
+        // this MVP the root is baked into the binary with no rotation
+        // path, we enforce expiry so operators are forced to rebuild
+        // before the root goes stale.
+        check_expiry(checked.get().expires(), &clock)?;
+
         Ok(Self {
             root: checked,
             transport,
@@ -210,6 +255,9 @@ where
         check_signature_limits(&signed, &self.limits)?;
 
         let unverified = Unverified::from_signed(signed);
+
+        check_role_type::<Timestamp>(&unverified.payload().role_type)?;
+        check_spec_version(&unverified.payload().spec_version)?;
 
         let role_keys = self
             .root
@@ -278,6 +326,9 @@ where
         check_signature_limits(&signed, &self.limits)?;
 
         let unverified = Unverified::from_signed(signed);
+
+        check_role_type::<Snapshot>(&unverified.payload().role_type)?;
+        check_spec_version(&unverified.payload().spec_version)?;
 
         let role_keys = self
             .root
@@ -354,6 +405,9 @@ where
         check_signature_limits(&signed, &self.limits)?;
 
         let unverified = Unverified::from_signed(signed);
+
+        check_role_type::<Targets>(&unverified.payload().role_type)?;
+        check_spec_version(&unverified.payload().spec_version)?;
 
         let role_keys = self
             .root

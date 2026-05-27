@@ -51,6 +51,10 @@ pub trait Role {
     fn role_type() -> RoleType
     where
         Self: Sized;
+    /// The expected value of the `_type` field in serialized metadata.
+    fn expected_type_str() -> &'static str
+    where
+        Self: Sized;
     fn version(&self) -> u32;
     /// Expiry as unix timestamp (seconds since epoch).
     /// No chrono dependency — the Clock trait in stuf-env

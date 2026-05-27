@@ -83,6 +83,10 @@ impl Role for Targets {
         RoleType::Targets
     }
 
+    fn expected_type_str() -> &'static str {
+        "targets"
+    }
+
     fn version(&self) -> u32 {
         self.version
     }

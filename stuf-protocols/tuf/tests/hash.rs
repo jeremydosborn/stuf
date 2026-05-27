@@ -57,6 +57,7 @@ fn build_chain_custom_target_hash(
 }
 
 /// Build a chain where timestamp has a hash for snapshot.
+#[allow(dead_code)]
 fn build_chain_with_metadata_hashes() -> (Vec<u8>, MockTransport, TestKey, TestKey, TestKey, TestKey)
 {
     let rk = TestKey::generate();

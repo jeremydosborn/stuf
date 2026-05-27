@@ -6,7 +6,8 @@ description = "TUF protocol implementation for the stuf supply chain security fr
 license = "Apache-2.0 OR MIT"
 
 [features]
-default = ["std"]
+full-errors = []
+default = ["std", "full-errors"]
 std = ["alloc", "serde/std"]
 alloc = ["serde/alloc", "hex/alloc", "stuf-env/alloc", "stuf-encoding/alloc", "stuf-encoding/jcs", "stuf-encoding/json"]
 no-heap = ["stuf-encoding/no-heap-jcs"]
