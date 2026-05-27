@@ -40,7 +40,7 @@ toaster-no-heap       # ARM Cortex-M demo using the no-heap verifier profile
 
 ## Status
 
-Early. Core architecture is in place. The first TUF profile is implemented. The embedded no-heap verifier profile is working and covered by CI.
+Early. Core architecture is in place. The first TUF profile is implemented. The embedded no-heap verifier profile is working and covered by CI. A smaller, bare metal profile is planned.
 
 ## License
 
