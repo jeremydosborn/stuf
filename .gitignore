@@ -1,14 +1,35 @@
-/target
+# Rust build output
+/target/
+**/target/
 **/*.rs.bk
-/.cargo
+
+# OS/editor noise
 .DS_Store
-old/target/
+*.swp
+*.swo
+
+# Local env / logs / archives
+.env
+.env.*
+!.env.example
+*.log
+*.zip
+*.tar
+*.tar.gz
+
+# Coverage / profiling
+*.profraw
+*.profdata
+coverage/
+tarpaulin-report.html
 
 # Generated demo artifacts
 stuf-examples/.generated/
 
 # Factory artifacts
-stuf-examples/toaster/factory/
+# Keep the intentionally tracked demo root fixture.
+stuf-examples/toaster/factory/*
+!stuf-examples/toaster/factory/root.json
 
 # Legacy demo publisher path
 stuf-examples/publisher-repo/
@@ -21,6 +42,3 @@ id_ed25519
 keys/
 secrets/
 private/
-**/target/
-.cargo/
-**/target/
