@@ -22,7 +22,7 @@ Applications compose verification profiles using stuf's primitives:
 
 `stuf-env` provides pluggable platform bindings for crypto, transport, storage, and clocks.
 
-`stuf-protocols/tuf` implements the first protocol profile: a TUF 1.0-oriented verifier and publisher profile for root, timestamp, snapshot, and targets metadata.
+`stuf-protocols/tuf` implements the first protocol profile: TUF v1.0.
 
 ## Embedded
 
