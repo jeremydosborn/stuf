@@ -142,10 +142,11 @@ fn no_heap_non_hex_target_sha256_reports_invalid_hash_encoding() {
         .verify_targets_bytes(&targets)
         .expect("targets should verify");
 
-    assert!(matches!(
-        checked.verify_target_bytes("firmware.bin", FIRMWARE),
-        Err(Error::InvalidHashEncoding)
-    ));
+    let err = checked
+        .verify_target_bytes("firmware.bin", FIRMWARE)
+        .unwrap_err();
+    eprintln!("non-hex target sha256 err: {err:?}");
+    assert!(matches!(err, Error::InvalidHashEncoding));
 }
 
 #[test]

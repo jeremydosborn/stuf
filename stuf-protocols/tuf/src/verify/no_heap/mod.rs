@@ -321,7 +321,7 @@ where
                 actual: bytes.len() as u64,
             });
         }
-        verify_sha256_hex(bytes, t.sha256).map_err(|_| Error::TargetHashMismatch)?;
+        verify_sha256_hex(bytes, t.sha256)?;
         Ok(Verified::new(t))
     }
 
@@ -685,7 +685,10 @@ fn verify_metadata_ref(bytes: &[u8], meta: MetaView<'_>) -> Result<()> {
         }
     }
     if let Some(expected) = meta.sha256 {
-        verify_sha256_hex(bytes, expected).map_err(|_| Error::MetadataHashMismatch)?;
+        verify_sha256_hex(bytes, expected).map_err(|err| match err {
+            Error::TargetHashMismatch => Error::MetadataHashMismatch,
+            other => other,
+        })?;
     }
     Ok(())
 }
