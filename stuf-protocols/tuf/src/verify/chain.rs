@@ -75,19 +75,7 @@ fn check_role_type<R: Role>(actual_type: &str) -> Result<()> {
             "targets" => "targets",
             _ => "unknown",
         };
-        #[cfg(any(not(feature = "no-heap"), feature = "full-errors"))]
-        {
-            Err(Error::RoleTypeMismatch {
-                expected: R::expected_type_str(),
-                actual,
-            })
-        }
-
-        #[cfg(all(feature = "no-heap", not(feature = "full-errors")))]
-        {
-            let _ = actual;
-            Err(Error::RoleTypeMismatch)
-        }
+        Err(Error::role_type_mismatch(R::expected_type_str(), actual))
     } else {
         Ok(())
     }
